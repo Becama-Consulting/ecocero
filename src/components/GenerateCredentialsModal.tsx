@@ -10,7 +10,7 @@ import { Loader2, Copy, Mail, Download, QrCode, Check } from "lucide-react";
 interface GenerateCredentialsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  users: Array<{ id: string; email: string; name: string; departamento: string | null }>;
+  users: Array<{ id: string; email: string; name: string; departamento?: string }>;
 }
 
 const generateRandomPassword = () => {

@@ -43,7 +43,8 @@ const DashboardProduccion = () => {
       return;
     }
 
-    if (!isAdmin() && !hasRole("supervisor")) {
+    // Allow access to admin_global, admin_departamento, and supervisor
+    if (!isAdmin() && !hasRole("supervisor") && !hasRole("operario")) {
       toast.error("No tienes acceso a este módulo");
       navigate("/");
       return;
