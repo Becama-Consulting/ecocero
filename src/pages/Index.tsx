@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, LogOut, Factory, Package, Users, BarChart3 } from "lucide-react";
+import { Zap, LogOut, Factory, Package, Users, BarChart3, Settings } from "lucide-react";
 
 const Index = () => {
   const { user, signOut, userRoles } = useAuth();
@@ -36,6 +36,18 @@ const Index = () => {
                 </p>
               )}
             </div>
+            {/* Admin button - only visible to admin_global */}
+            {userRoles.some((r) => r.role === "admin_global") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/admin/users")}
+                className="touch-target"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Admin
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

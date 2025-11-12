@@ -10,17 +10,12 @@ import { Zap } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-
-  // Signup form state
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupName, setSignupName] = useState("");
 
   // Redirect if already authenticated
   if (user) {
@@ -41,20 +36,8 @@ const Auth = () => {
     setLoading(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    
-    if (!error) {
-      // Switch to login tab after successful signup
-      setLoginEmail(signupEmail);
-      setLoginPassword(signupPassword);
-    }
-    
-    setLoading(false);
-  };
+  // Signup deshabilitado - los usuarios se crean desde Admin Panel
+  // No se permite auto-registro público
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-success/10 via-background to-info/10 p-4">
@@ -72,9 +55,8 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsList className="grid w-full grid-cols-1 mb-4">
               <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Registrarse</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
@@ -112,56 +94,13 @@ const Auth = () => {
                 </Button>
               </form>
             </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nombre Completo</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Juan Pérez"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
-                    required
-                    autoComplete="name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="tu@email.com"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Contraseña</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                    autoComplete="new-password"
-                    minLength={6}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-secondary hover:bg-secondary/90"
-                  disabled={loading}
-                >
-                  {loading ? "Registrando..." : "Registrarse"}
-                </Button>
-              </form>
-            </TabsContent>
           </Tabs>
+
+          <div className="mt-6 p-4 bg-muted rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground text-center">
+              ¿Eres nuevo? Contacta al administrador para crear tu cuenta.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
