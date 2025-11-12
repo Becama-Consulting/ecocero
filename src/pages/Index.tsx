@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap, LogOut, Factory, Package, Users, BarChart3, Settings } from "lucide-react";
@@ -8,9 +8,13 @@ import { Zap, LogOut, Factory, Package, Users, BarChart3, Settings } from "lucid
 const Index = () => {
   const { user, signOut, userRoles, isAdmin, getDashboardByRole, loading } = useAuth();
   const navigate = useNavigate();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     const handleRedirect = async () => {
+      // Evitar múltiples redirects
+      if (hasRedirected.current) return;
+      
       console.log('🔍 Index.tsx - Checking redirect:', {
         loading,
         user: user?.email,
@@ -19,6 +23,7 @@ const Index = () => {
       });
 
       if (!loading && user && !isAdmin()) {
+        hasRedirected.current = true;
         const dashboardRoute = await getDashboardByRole();
         console.log('🚀 Redirecting to:', dashboardRoute);
         
@@ -31,7 +36,7 @@ const Index = () => {
     };
 
     handleRedirect();
-  }, [loading, user, isAdmin, getDashboardByRole, navigate]);
+  }, [loading, user, userRoles, isAdmin, navigate]);
 
   const handleSignOut = async () => {
     await signOut();

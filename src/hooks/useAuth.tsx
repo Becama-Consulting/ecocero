@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -131,17 +131,17 @@ export const useAuth = () => {
     }
   };
 
-  const hasRole = (role: UserRole["role"]) => {
+  const hasRole = useCallback((role: UserRole["role"]) => {
     return userRoles.some((r) => r.role === role);
-  };
+  }, [userRoles]);
 
-  const isAdmin = () => {
+  const isAdmin = useCallback(() => {
     return userRoles.some(
       (r) => r.role === "admin_global" || r.role === "admin_departamento"
     );
-  };
+  }, [userRoles]);
 
-  const getDashboardByRole = async () => {
+  const getDashboardByRole = useCallback(async () => {
     console.log('🎯 getDashboardByRole called:', {
       user: user?.email,
       userRoles,
@@ -197,7 +197,7 @@ export const useAuth = () => {
     }
     
     return '/';
-  };
+  }, [user, userRoles]);
 
   return {
     user,
