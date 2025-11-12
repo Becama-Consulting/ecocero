@@ -9,24 +9,43 @@ const Index = () => {
   const { user, signOut, userRoles, isAdmin, getDashboardByRole, loading } = useAuth();
   const navigate = useNavigate();
   const hasRedirected = useRef(false);
+  const isRedirecting = useRef(false);
 
   useEffect(() => {
     const handleRedirect = async () => {
-      // Evitar múltiples redirects
-      if (hasRedirected.current) return;
-
-      if (!loading && user && !isAdmin()) {
+      // Prevenir múltiples ejecuciones
+      if (isRedirecting.current || hasRedirected.current) return;
+      
+      // Esperar a que termine de cargar
+      if (loading) return;
+      
+      // Si no hay usuario, no hacer nada (ProtectedRoute manejará redirect a /auth)
+      if (!user) return;
+      
+      // Si es admin, quedarse en esta página
+      if (isAdmin()) return;
+      
+      // Si no es admin, redirigir a su dashboard
+      isRedirecting.current = true;
+      const dashboardRoute = await getDashboardByRole();
+      
+      if (dashboardRoute && dashboardRoute !== '/') {
         hasRedirected.current = true;
-        const dashboardRoute = await getDashboardByRole();
-        
-        if (dashboardRoute !== '/') {
-          navigate(dashboardRoute, { replace: true });
-        }
+        navigate(dashboardRoute, { replace: true });
       }
+      
+      isRedirecting.current = false;
     };
 
     handleRedirect();
-  }, [loading, user, userRoles, isAdmin, navigate]);
+  }, [loading, user, isAdmin, getDashboardByRole, navigate]);
+  
+  // Reset hasRedirected cuando el usuario cambia
+  useEffect(() => {
+    if (!user) {
+      hasRedirected.current = false;
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();

@@ -28,12 +28,17 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!loginEmail?.trim() || !loginPassword) {
+      return;
+    }
+    
     setLoading(true);
     
-    const { error } = await signIn(loginEmail, loginPassword);
+    const { error } = await signIn(loginEmail.trim(), loginPassword);
     
     if (!error) {
-      // El redirect lo manejará el useEffect arriba
+      // Reset para permitir redirect en useEffect
       hasRedirected.current = false;
     }
     

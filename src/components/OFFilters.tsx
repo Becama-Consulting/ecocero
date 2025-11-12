@@ -23,7 +23,8 @@ export const OFFilters = ({ onFilterChange, lines = [] }: OFFiltersProps) => {
   const [filters, setFilters] = useState<OFFilters>({});
 
   const handleFilterChange = (key: keyof OFFilters, value: string) => {
-    const newFilters = { ...filters, [key]: value || undefined };
+    // Ignore "all" values as they mean no filter
+    const newFilters = { ...filters, [key]: (value && value !== 'all') ? value : undefined };
     setFilters(newFilters);
     onFilterChange(newFilters);
   };
@@ -56,14 +57,14 @@ export const OFFilters = ({ onFilterChange, lines = [] }: OFFiltersProps) => {
           <div>
             <Label htmlFor="status">Estado</Label>
             <Select 
-              value={filters.status || ""} 
+              value={filters.status || "all"} 
               onValueChange={(v) => handleFilterChange('status', v)}
             >
               <SelectTrigger id="status">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pendiente">Pendiente</SelectItem>
                 <SelectItem value="en_proceso">En Proceso</SelectItem>
                 <SelectItem value="completada">Completada</SelectItem>
@@ -76,14 +77,14 @@ export const OFFilters = ({ onFilterChange, lines = [] }: OFFiltersProps) => {
           <div>
             <Label htmlFor="line">Línea</Label>
             <Select 
-              value={filters.lineId || ""} 
+              value={filters.lineId || "all"} 
               onValueChange={(v) => handleFilterChange('lineId', v)}
             >
               <SelectTrigger id="line">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
                 {lines.map((line) => (
                   <SelectItem key={line.id} value={line.id}>
                     {line.name}
