@@ -48,15 +48,19 @@ export const useAuth = () => {
 
   const fetchUserRoles = async (userId: string) => {
     try {
+      console.log('🔐 Fetching roles for user:', userId);
+      
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
 
       if (error) throw error;
+      
+      console.log('✅ Roles fetched:', data);
       setUserRoles(data || []);
     } catch (error) {
-      console.error("Error fetching user roles:", error);
+      console.error("❌ Error fetching user roles:", error);
       setUserRoles([]);
     }
   };
@@ -138,10 +142,17 @@ export const useAuth = () => {
   };
 
   const getDashboardByRole = async () => {
+    console.log('🎯 getDashboardByRole called:', {
+      user: user?.email,
+      userRoles,
+      hasAdminGlobal: userRoles.some(r => r.role === 'admin_global')
+    });
+
     if (!user || userRoles.length === 0) return '/auth';
     
     // Admin global ve selector de módulos
     if (userRoles.some(r => r.role === 'admin_global')) {
+      console.log('👑 Admin global detected - returning /');
       return '/';
     }
     

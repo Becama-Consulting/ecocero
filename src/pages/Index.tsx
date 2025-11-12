@@ -11,11 +11,22 @@ const Index = () => {
 
   useEffect(() => {
     const handleRedirect = async () => {
+      console.log('🔍 Index.tsx - Checking redirect:', {
+        loading,
+        user: user?.email,
+        userRoles,
+        isAdmin: isAdmin()
+      });
+
       if (!loading && user && !isAdmin()) {
         const dashboardRoute = await getDashboardByRole();
+        console.log('🚀 Redirecting to:', dashboardRoute);
+        
         if (dashboardRoute !== '/') {
           navigate(dashboardRoute, { replace: true });
         }
+      } else if (!loading && user && isAdmin()) {
+        console.log('✅ Admin detected - staying on Index page (selector)');
       }
     };
 
