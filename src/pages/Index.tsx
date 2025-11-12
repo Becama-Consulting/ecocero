@@ -1,12 +1,19 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Zap, LogOut, Factory, Package, Users, BarChart3, Settings } from "lucide-react";
 
 const Index = () => {
-  const { user, signOut, userRoles } = useAuth();
+  const { user, signOut, userRoles, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user && !isAdmin()) {
+      navigate("/dashboard/produccion", { replace: true });
+    }
+  }, [user, isAdmin, navigate]);
 
   const handleSignOut = async () => {
     await signOut();

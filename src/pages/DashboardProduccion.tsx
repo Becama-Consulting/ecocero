@@ -38,51 +38,15 @@ const DashboardProduccion = () => {
   const [users, setUsers] = useState<UserData[]>([]);
 
   useEffect(() => {
-    let cancelled = false;
+    if (!user) return;
 
-    const checkAccessAndInit = async () => {
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
-      // Fetch roles directly to avoid race conditions with the auth hook
-      const { data: roles, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Error checking roles:", error);
-        toast.error("No se pudieron verificar permisos");
-        navigate("/");
-        return;
-      }
-
-      const rolesList = (roles || []).map((r) => r.role);
-      const allowed = rolesList.includes("admin_global") ||
-                      rolesList.includes("admin_departamento") ||
-                      rolesList.includes("supervisor");
-
-      if (!allowed) {
-        toast.error("No tienes acceso a este módulo");
-        navigate("/");
-        return;
-      }
-
-      if (!cancelled) {
-        fetchDashboardData();
-        loadUsers();
-        setupRealtimeSubscriptions();
-      }
-    };
-
-    checkAccessAndInit();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, navigate]);
+    // Acceso permitido para: admin_global, admin_departamento, supervisor, operario, quality
+    // (básicamente todos los roles de producción)
+    
+    fetchDashboardData();
+    loadUsers();
+    setupRealtimeSubscriptions();
+  }, [user]);
 
   const loadUsers = async () => {
     try {

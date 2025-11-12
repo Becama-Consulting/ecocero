@@ -31,7 +31,10 @@ const Auth = () => {
     const { error } = await signIn(loginEmail, loginPassword);
     
     if (!error) {
-      navigate("/");
+      // Pequeño delay para que se carguen los roles antes del redirect
+      setTimeout(() => {
+        navigate("/");
+      }, 300);
     }
     
     setLoading(false);
