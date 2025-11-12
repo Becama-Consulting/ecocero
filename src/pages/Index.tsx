@@ -75,7 +75,7 @@ const Index = () => {
         {/* Module Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Producción Module */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-success" onClick={() => navigate("/dashboard/produccion")}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-success">
             <CardHeader>
               <div className="flex items-center space-x-3 mb-2">
                 <div className="status-success rounded-lg p-2">
@@ -88,7 +88,10 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full status-success hover:bg-success/90 touch-target">
+              <Button 
+                onClick={() => navigate("/dashboard/produccion")}
+                className="w-full status-success hover:bg-success/90 touch-target"
+              >
                 Acceder →
               </Button>
             </CardContent>
