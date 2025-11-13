@@ -117,6 +117,37 @@ const Index = () => {
 
         {/* Module Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Admin Panel Module - Only for admin_global */}
+          {userRoles.some((r) => r.role === "admin_global") && (
+            <Card 
+              className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 cursor-pointer"
+              onClick={() => navigate('/admin/users')}
+            >
+              <CardHeader>
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="bg-primary text-primary-foreground rounded-lg p-2">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <CardTitle>Admin Panel</CardTitle>
+                </div>
+                <CardDescription>
+                  Gestión de usuarios, roles y permisos del sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/admin/users');
+                  }}
+                  className="w-full bg-primary hover:bg-primary/90 touch-target"
+                >
+                  Acceder →
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Producción Module */}
           <Card className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-success">
             <CardHeader>
