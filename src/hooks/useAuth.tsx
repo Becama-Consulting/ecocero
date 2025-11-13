@@ -15,35 +15,45 @@ export const useAuth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Defer role fetching with setTimeout to prevent deadlock
-        setTimeout(() => {
-          fetchUserRoles(session.user.id);
-        }, 0);
-      } else {
-        setUserRoles([]);
-      }
-    });
+    let mounted = true;
 
-    // THEN check for existing session
+    // Check for existing session FIRST
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         fetchUserRoles(session.user.id);
+      } else {
+        setUserRoles([]);
       }
+      
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // THEN set up auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserRoles(session.user.id);
+      } else {
+        setUserRoles([]);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserRoles = async (userId: string) => {

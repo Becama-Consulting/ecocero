@@ -22,10 +22,13 @@ const Index = () => {
       // Si no hay usuario, no hacer nada (ProtectedRoute manejará redirect a /auth)
       if (!user) return;
       
-      // Si es admin, quedarse en esta página
-      if (isAdmin()) return;
+      // CRÍTICO: Esperar a que userRoles esté cargado
+      if (userRoles.length === 0) return;
       
-      // Si no es admin, redirigir a su dashboard
+      // Si es admin_global, quedarse en esta página (selector de módulos)
+      if (userRoles.some(r => r.role === 'admin_global')) return;
+      
+      // Si no es admin_global, redirigir a su dashboard específico
       isRedirecting.current = true;
       const dashboardRoute = await getDashboardByRole();
       
@@ -38,12 +41,13 @@ const Index = () => {
     };
 
     handleRedirect();
-  }, [loading, user, isAdmin, getDashboardByRole, navigate]);
+  }, [loading, user, userRoles, getDashboardByRole, navigate]);
   
   // Reset hasRedirected cuando el usuario cambia
   useEffect(() => {
     if (!user) {
       hasRedirected.current = false;
+      isRedirecting.current = false;
     }
   }, [user]);
 
