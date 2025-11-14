@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, ArrowLeft, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { GenerateCredentialsModal } from "@/components/GenerateCredentialsModal";
 import { UserCredentialsModal } from "@/components/UserCredentialsModal";
 
 interface UserData {
@@ -33,6 +34,7 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<UserData[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
   
   // Form state
   const [newEmail, setNewEmail] = useState("");
@@ -115,11 +117,23 @@ const AdminUsers = () => {
   };
 
   const handleCreateUser = async () => {
+    // Validaciones
     if (!newEmail || !newName) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Email y nombre son requeridos",
+      });
+      return;
+    }
+
+    // Validar formato email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Formato de email inválido",
       });
       return;
     }
@@ -133,19 +147,52 @@ const AdminUsers = () => {
       return;
     }
 
+    // Validar departamento para roles que lo requieren
+    if (!newDepartamento && selectedRoles.some(r => ['admin_departamento', 'supervisor', 'operario'].includes(r))) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "El rol seleccionado requiere un departamento",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      // Generate secure random password
-      const password = Array.from({ length: 12 }, () => 
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
-          .charAt(Math.floor(Math.random() * 68))
-      ).join('');
+      // Generate secure random password (12 chars: uppercase, lowercase, numbers, symbols)
+      const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+      const numberChars = '0123456789';
+      const symbolChars = '@#$%&*';
+      const allChars = uppercaseChars + lowercaseChars + numberChars + symbolChars;
+      
+      let password = '';
+      // Ensure at least one of each type
+      password += uppercaseChars[Math.floor(Math.random() * uppercaseChars.length)];
+      password += lowercaseChars[Math.floor(Math.random() * lowercaseChars.length)];
+      password += numberChars[Math.floor(Math.random() * numberChars.length)];
+      password += symbolChars[Math.floor(Math.random() * symbolChars.length)];
+      
+      // Fill the rest randomly
+      for (let i = 4; i < 12; i++) {
+        password += allChars[Math.floor(Math.random() * allChars.length)];
+      }
+      
+      // Shuffle the password
+      password = password.split('').sort(() => Math.random() - 0.5).join('');
 
       // Get current session token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No hay sesión activa');
 
       // Call Edge Function to create user
+      console.log('Calling create-user Edge Function...', {
+        email: newEmail,
+        name: newName,
+        departamento: newDepartamento || null,
+        role: selectedRoles[0]
+      });
+
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: newEmail,
@@ -156,8 +203,20 @@ const AdminUsers = () => {
         },
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Error al crear usuario');
+      console.log('Edge Function response:', { data, error });
+
+      if (error) {
+        console.error('Edge Function invocation error:', error);
+        throw new Error(`Error al invocar función: ${error.message}`);
+      }
+
+      if (!data || !data.success) {
+        const errorMsg = data?.error || 'Error desconocido al crear usuario';
+        console.error('Edge Function returned error:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      console.log('Usuario creado exitosamente:', data.user);
 
       // Store credentials to show modal
       setGeneratedPassword(password);
