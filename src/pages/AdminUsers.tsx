@@ -28,7 +28,7 @@ type AppRole = "admin_global" | "admin_departamento" | "supervisor" | "operario"
 
 const AdminUsers = () => {
   const navigate = useNavigate();
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, userRoles, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [loading, setLoading] = useState(false);
@@ -44,6 +44,13 @@ const AdminUsers = () => {
 
   // Verify admin access
   useEffect(() => {
+    // Esperar a que termine de cargar auth
+    if (authLoading) return;
+    
+    // Esperar a que userRoles esté cargado
+    if (userRoles.length === 0) return;
+    
+    // Verificar si tiene rol admin_global
     if (user && !hasRole("admin_global")) {
       navigate("/");
       toast({
@@ -52,7 +59,7 @@ const AdminUsers = () => {
         description: "Solo admins globales pueden acceder a esta página",
       });
     }
-  }, [user, hasRole, navigate, toast]);
+  }, [user, hasRole, userRoles, authLoading, navigate, toast]);
 
   // Load users
   useEffect(() => {
@@ -259,6 +266,18 @@ const AdminUsers = () => {
     };
     return labels[dept] || dept;
   };
+
+  // Mostrar loader mientras verifica permisos
+  if (authLoading || (user && userRoles.length === 0)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Verificando permisos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-success/10 via-background to-info/10">
