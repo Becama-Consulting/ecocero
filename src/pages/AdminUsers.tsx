@@ -253,40 +253,49 @@ const AdminUsers = () => {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar a ${userName}?`)) {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar a ${userName}?\n\nEsta acción:\n- Eliminará el usuario del sistema\n- Eliminará su perfil y roles\n- No se puede deshacer`)) {
       return;
     }
 
     setLoading(true);
     try {
-      // Delete roles
-      const { error: rolesError } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", userId);
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No hay sesión activa');
 
-      if (rolesError) throw rolesError;
+      console.log('Calling delete-user Edge Function for:', userId);
 
-      // Delete profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", userId);
+      // Call Edge Function to delete user completely
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
 
-      if (profileError) throw profileError;
+      console.log('Edge Function response:', { data, error });
+
+      if (error) {
+        console.error('Edge Function invocation error:', error);
+        throw new Error(`Error al invocar función: ${error.message}`);
+      }
+
+      if (!data || !data.success) {
+        const errorMsg = data?.error || 'Error desconocido al eliminar usuario';
+        console.error('Edge Function returned error:', errorMsg);
+        throw new Error(errorMsg);
+      }
 
       toast({
         title: "Usuario eliminado",
-        description: `${userName} ha sido eliminado`,
+        description: `${userName} ha sido eliminado completamente del sistema`,
       });
 
+      // Reload users list
       loadUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "No se pudo eliminar el usuario",
+        title: "Error al eliminar usuario",
+        description: error instanceof Error ? error.message : "No se pudo eliminar el usuario",
       });
     } finally {
       setLoading(false);

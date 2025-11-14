@@ -48,29 +48,35 @@ export const GenerateCredentialsModal = ({ open, onOpenChange, users }: Generate
 
     setLoading(true);
     try {
-      const newPassword = generateRandomPassword();
-      
-      // Update password via Supabase Admin API
-      const { error } = await supabase.auth.admin.updateUserById(
-        selectedUser.id,
-        { password: newPassword }
-      );
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No hay sesión activa');
 
-      if (error) throw error;
+      console.log('Calling regenerate-password Edge Function for:', selectedUser.id);
 
-      // Log activity
-      await supabase.from("activity_log").insert({
-        user_id: selectedUser.id,
-        action: "generate_credentials",
-        table_name: "auth.users",
-        record_id: selectedUser.id,
-        new_values: { password_generated: true, timestamp: new Date().toISOString() }
+      // Call Edge Function to regenerate password
+      const { data, error } = await supabase.functions.invoke('regenerate-password', {
+        body: { userId: selectedUser.id }
       });
 
-      setGeneratedPassword(newPassword);
+      console.log('Edge Function response:', { data, error });
+
+      if (error) {
+        console.error('Edge Function invocation error:', error);
+        throw new Error(`Error al invocar función: ${error.message}`);
+      }
+
+      if (!data || !data.success) {
+        const errorMsg = data?.error || 'Error desconocido al regenerar contraseña';
+        console.error('Edge Function returned error:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      setGeneratedPassword(data.password);
+      
       toast({
-        title: "Credenciales generadas",
-        description: `Contraseña generada para ${selectedUser.name}`,
+        title: "Contraseña regenerada",
+        description: `Nueva contraseña generada para ${selectedUser.name}`,
       });
     } catch (error) {
       console.error("Error generating password:", error);
