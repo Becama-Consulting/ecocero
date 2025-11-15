@@ -26,11 +26,12 @@ export const DashboardRRHH = () => {
     if (!loading && user) {
       const hasAccess = userRoles.some(r => 
         r.role === 'admin_global' || 
-        (r.role === 'admin_departamento')
+        r.role === 'admin_departamento' ||
+        r.role === 'rrhh'
       );
       
       if (!hasAccess) {
-        navigate('/dashboard/produccion');
+        navigate('/');
       }
     }
   }, [loading, user, userRoles, navigate]);
