@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      absences: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          employee_id: string
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+          status: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          employee_id: string
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          status?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          employee_id?: string
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          status?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_log: {
         Row: {
           action: string
@@ -87,6 +137,151 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      attendance: {
+        Row: {
+          check_in: string | null
+          check_out: string | null
+          created_at: string | null
+          date: string
+          employee_id: string
+          id: string
+          notes: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_documents: {
+        Row: {
+          created_at: string | null
+          document_type: string
+          employee_id: string
+          expiry_date: string | null
+          file_url: string
+          id: string
+          required: boolean | null
+          updated_at: string | null
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_type: string
+          employee_id: string
+          expiry_date?: string | null
+          file_url: string
+          id?: string
+          required?: boolean | null
+          updated_at?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string
+          employee_id?: string
+          expiry_date?: string | null
+          file_url?: string
+          id?: string
+          required?: boolean | null
+          updated_at?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          active: boolean | null
+          contract_type: string
+          created_at: string | null
+          department: string
+          dni: string
+          email: string
+          employee_code: string
+          full_name: string
+          hire_date: string
+          id: string
+          phone: string | null
+          position: string
+          termination_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          contract_type: string
+          created_at?: string | null
+          department: string
+          dni: string
+          email: string
+          employee_code: string
+          full_name: string
+          hire_date: string
+          id?: string
+          phone?: string | null
+          position: string
+          termination_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          contract_type?: string
+          created_at?: string | null
+          department?: string
+          dni?: string
+          email?: string
+          employee_code?: string
+          full_name?: string
+          hire_date?: string
+          id?: string
+          phone?: string | null
+          position?: string
+          termination_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       fabrication_orders: {
         Row: {
@@ -247,6 +442,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      shifts: {
+        Row: {
+          created_at: string | null
+          date: string
+          employee_id: string
+          end_time: string
+          id: string
+          shift_type: string
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          employee_id: string
+          end_time: string
+          id?: string
+          shift_type: string
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          employee_id?: string
+          end_time?: string
+          id?: string
+          shift_type?: string
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
