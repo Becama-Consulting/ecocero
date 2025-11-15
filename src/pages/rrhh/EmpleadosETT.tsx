@@ -37,12 +37,12 @@ type FacturaETT = {
   period_end: string;
   total_amount: number;
   validated: boolean;
-  discrepancies: any[];
+  discrepancies: any;
   file_url: string;
 };
 
 export const EmpleadosETT = () => {
-  const { user, profile, userRoles, loading } = useAuth();
+  const { user, userRoles, loading, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -52,15 +52,14 @@ export const EmpleadosETT = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      const hasAdminGlobal = userRoles.includes('admin_global');
-      const hasAdminDepartamento = userRoles.includes('admin_departamento') && 
-                                   profile?.departamento === 'rrhh';
+      const hasAdminGlobal = hasRole('admin_global');
+      const hasAdminDepartamento = hasRole('admin_departamento');
       
       if (!hasAdminGlobal && !hasAdminDepartamento) {
         navigate('/dashboard-produccion');
       }
     }
-  }, [loading, user, userRoles, profile, navigate]);
+  }, [loading, user, hasRole, navigate]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -312,7 +311,7 @@ export const EmpleadosETT = () => {
                     ) : (
                       <Badge variant="destructive">
                         <AlertTriangle className="h-3 w-3 mr-1" />
-                        {factura.discrepancies.length} Discrepancias
+                        {Array.isArray(factura.discrepancies) ? factura.discrepancies.length : 0} Discrepancias
                       </Badge>
                     )}
                   </div>
@@ -327,7 +326,7 @@ export const EmpleadosETT = () => {
                 </div>
               </div>
 
-              {!factura.validated && factura.discrepancies.length > 0 && (
+              {!factura.validated && Array.isArray(factura.discrepancies) && factura.discrepancies.length > 0 && (
                 <Alert variant="destructive" className="mt-4">
                   <AlertDescription>
                     <strong>Discrepancias detectadas:</strong>
