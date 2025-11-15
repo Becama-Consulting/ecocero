@@ -18,7 +18,7 @@ type Fichaje = {
   employee_id: string;
   check_in: string;
   check_out: string | null;
-  status: 'completo' | 'pendiente' | 'incompleto' | 'justificado';
+  status: string;
   employees: {
     employee_code: string;
     full_name: string;
