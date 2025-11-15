@@ -11,7 +11,7 @@ import DashboardProduccion from "./pages/produccion/DashboardProduccion";
 import DetalleLinea from "./pages/produccion/DetalleLinea";
 import FichaOF from "./pages/produccion/FichaOF";
 import Alertas from "./pages/produccion/Alertas";
-import { DashboardRRHH, Empleados, Fichajes, Turnos, Ausencias, Nominas } from "./pages/rrhh";
+import { DashboardRRHH, Empleados, Fichajes, Turnos, Ausencias, Nominas, Documentacion, EmpleadosETT } from "./pages/rrhh";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -118,6 +118,22 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Nominas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rrhh/documentacion"
+            element={
+              <ProtectedRoute>
+                <Documentacion />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rrhh/empleados-ett"
+            element={
+              <ProtectedRoute>
+                <EmpleadosETT />
               </ProtectedRoute>
             }
           />

@@ -219,6 +219,7 @@ export type Database = {
           status: string | null
           updated_at: string | null
           uploaded_by: string | null
+          validated_at: string | null
           verified: boolean | null
           verified_at: string | null
           verified_by: string | null
@@ -238,6 +239,7 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           uploaded_by?: string | null
+          validated_at?: string | null
           verified?: boolean | null
           verified_at?: string | null
           verified_by?: string | null
@@ -257,6 +259,7 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           uploaded_by?: string | null
+          validated_at?: string | null
           verified?: boolean | null
           verified_at?: string | null
           verified_by?: string | null

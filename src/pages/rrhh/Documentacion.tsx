@@ -43,7 +43,7 @@ const REQUIRED_DOCUMENTS = [
 ];
 
 export const Documentacion = () => {
-  const { user, profile, userRoles, loading } = useAuth();
+  const { user, userRoles, loading, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -54,15 +54,14 @@ export const Documentacion = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      const hasAdminGlobal = userRoles.includes('admin_global');
-      const hasAdminDepartamento = userRoles.includes('admin_departamento') && 
-                                   profile?.departamento === 'rrhh';
+      const hasAdminGlobal = hasRole('admin_global');
+      const hasAdminDepartamento = hasRole('admin_departamento');
       
       if (!hasAdminGlobal && !hasAdminDepartamento) {
         navigate('/dashboard-produccion');
       }
     }
-  }, [loading, user, userRoles, profile, navigate]);
+  }, [loading, user, hasRole, navigate]);
 
   useEffect(() => {
     if (!loading && user) {
