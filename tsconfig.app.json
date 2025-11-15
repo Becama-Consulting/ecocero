@@ -27,5 +27,13 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "supabase/functions",
+    "prompts",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }
