@@ -14,7 +14,7 @@ dist-ssr
 
 # Environment variables - TEMPORARY: .env allowed for Lovable
 # .env
-# Environment variables - NEVER COMMIT
+# Environment variables - Protect production only
 .env.local
 .env.production
 .env.development

@@ -1,11 +1,10 @@
 {
   "ignore": [
-    ".env",
     ".env.local",
     ".env.production",
     ".env.development"
   ],
   "protected": [
-    ".env"
+    ".env.production"
   ]
 }
