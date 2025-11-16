@@ -23,11 +23,8 @@ export const DashboardRRHH = () => {
 
   // Verificar permisos
   useEffect(() => {
-    if (!loading && user) {
-      const hasAccess = userRoles.some(r => 
-        r.role === 'admin_global' || 
-        (r.role === 'admin_departamento')
-      );
+    if (!loading && user && userRoles.length > 0) {
+      const hasAccess = userRoles.some(r => r.role === 'admin_global');
       
       if (!hasAccess) {
         navigate('/dashboard/produccion');
