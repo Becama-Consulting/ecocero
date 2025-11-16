@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EditOFModal, PhotoGallery, PhotoUpload } from "@/components/produccion";
+import { downloadDeliveryPDF } from "@/lib/generateDeliveryPDF";
 
 interface FabricationOrder {
   id: string;
@@ -304,6 +305,58 @@ const FichaOF = () => {
     }
   };
 
+  const handleGenerateDelivery = async () => {
+    if (!of) return;
+    
+    try {
+      // 1. Generar PDF
+      const pdfData = {
+        documentNumber: of.sap_id || of.id.slice(0, 8),
+        date: new Date().toISOString(),
+        customer: {
+          name: of.customer,
+          address: 'C/ Cliente, 1',
+          taxId: 'B99999999'
+        },
+        items: [
+          {
+            code: 'ITEM001',
+            description: 'Producto fabricado',
+            quantity: 100,
+            unit: 'UDS'
+          }
+        ],
+        notes: 'Entrega conforme a pedido'
+      };
+
+      downloadDeliveryPDF(pdfData);
+
+      // 2. Crear albarán en SAP (opcional - comentado porque las credenciales están vacías)
+      /* 
+      const n8nUrl = import.meta.env.VITE_N8N_BASE_URL;
+      if (n8nUrl) {
+        await fetch(`${n8nUrl}/sap-create-delivery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            of_id: of.id,
+            customer_code: 'C0001',
+            items: pdfData.items
+          })
+        });
+      }
+      */
+
+      // 3. Actualizar estado OF
+      await handleChangeStatus('albaranada');
+
+      toast.success('Albarán generado correctamente');
+    } catch (error) {
+      console.error('Error generating delivery:', error);
+      toast.error('Error al generar albarán');
+    }
+  };
+
   const handlePhotoUploaded = async (stepId: string, url: string) => {
     try {
       const step = steps.find(s => s.id === stepId);
@@ -457,7 +510,7 @@ const FichaOF = () => {
         );
       case 'validada':
         return (
-          <Button onClick={() => handleChangeStatus('albarana')} size="sm" variant="secondary">
+          <Button onClick={handleGenerateDelivery} size="sm" variant="secondary">
             Generar Albarán
           </Button>
         );
