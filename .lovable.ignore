@@ -1,5 +1,0 @@
-# Archivos que Lovable AI no debe modificar
-.env
-.env.local
-.env.production
-.env.development
