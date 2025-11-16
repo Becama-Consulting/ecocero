@@ -106,83 +106,87 @@ export const DashboardRRHH = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard RRHH</h1>
-        <p className="text-muted-foreground">
-          Gestión de Recursos Humanos - EcoZero
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-warning/10 via-warning/5 to-transparent rounded-lg p-6 border border-warning/20">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-warning to-warning-foreground bg-clip-text text-transparent">
+            Dashboard RRHH
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Gestión de Recursos Humanos - EcoZero
+          </p>
+        </div>
 
-      {/* Métricas del día */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Empleados Presentes"
-          value={`${metrics.empleadosPresentes}/${metrics.empleadosTotales}`}
-          icon={Users}
-          color="green"
-          onClick={() => navigate('/rrhh/fichajes')}
-        />
-        
-        <MetricCard
-          title="Fichajes Pendientes"
-          value={metrics.fichajesPendientes}
-          icon={AlertTriangle}
-          color={metrics.fichajesPendientes > 0 ? 'red' : 'gray'}
-          onClick={() => navigate('/rrhh/fichajes')}
-        />
-        
-        <MetricCard
-          title="Ausencias Hoy"
-          value={metrics.ausenciasHoy}
-          icon={Calendar}
-          color="blue"
-          onClick={() => navigate('/rrhh/ausencias')}
-        />
-        
-        <MetricCard
-          title="Docs Caducados"
-          value={metrics.documentosCaducados}
-          icon={FileWarning}
-          color={metrics.documentosCaducados > 0 ? 'orange' : 'gray'}
-          onClick={() => navigate('/rrhh/documentacion')}
-        />
-      </div>
+        {/* Métricas del día */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            title="Empleados Presentes"
+            value={`${metrics.empleadosPresentes}/${metrics.empleadosTotales}`}
+            icon={Users}
+            color="green"
+            onClick={() => navigate('/rrhh/fichajes')}
+          />
+          
+          <MetricCard
+            title="Fichajes Pendientes"
+            value={metrics.fichajesPendientes}
+            icon={AlertTriangle}
+            color={metrics.fichajesPendientes > 0 ? 'red' : 'gray'}
+            onClick={() => navigate('/rrhh/fichajes')}
+          />
+          
+          <MetricCard
+            title="Ausencias Hoy"
+            value={metrics.ausenciasHoy}
+            icon={Calendar}
+            color="blue"
+            onClick={() => navigate('/rrhh/ausencias')}
+          />
+          
+          <MetricCard
+            title="Docs Caducados"
+            value={metrics.documentosCaducados}
+            icon={FileWarning}
+            color={metrics.documentosCaducados > 0 ? 'orange' : 'gray'}
+            onClick={() => navigate('/rrhh/documentacion')}
+          />
+        </div>
 
-      {/* Accesos rápidos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card 
-          className="p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => navigate('/rrhh/empleados')}
-        >
-          <h3 className="font-semibold text-lg">Empleados</h3>
-          <p className="text-sm text-muted-foreground">Gestión de personal</p>
-        </Card>
-        
-        <Card 
-          className="p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => navigate('/rrhh/fichajes')}
-        >
-          <h3 className="font-semibold text-lg">Fichajes</h3>
-          <p className="text-sm text-muted-foreground">Control horario</p>
-        </Card>
-        
-        <Card 
-          className="p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => navigate('/rrhh/turnos')}
-        >
-          <h3 className="font-semibold text-lg">Turnos</h3>
-          <p className="text-sm text-muted-foreground">Planificación turnos</p>
-        </Card>
-        
-        <Card 
-          className="p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => navigate('/rrhh/nominas')}
-        >
-          <h3 className="font-semibold text-lg">Nóminas</h3>
-          <p className="text-sm text-muted-foreground">Validación nóminas</p>
-        </Card>
+        {/* Accesos rápidos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20"
+            onClick={() => navigate('/rrhh/empleados')}
+          >
+            <h3 className="font-semibold text-lg">Empleados</h3>
+            <p className="text-sm text-muted-foreground">Gestión de personal</p>
+          </Card>
+          
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20"
+            onClick={() => navigate('/rrhh/fichajes')}
+          >
+            <h3 className="font-semibold text-lg">Fichajes</h3>
+            <p className="text-sm text-muted-foreground">Control horario</p>
+          </Card>
+          
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20"
+            onClick={() => navigate('/rrhh/turnos')}
+          >
+            <h3 className="font-semibold text-lg">Turnos</h3>
+            <p className="text-sm text-muted-foreground">Planificación turnos</p>
+          </Card>
+          
+          <Card 
+            className="p-6 cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20"
+            onClick={() => navigate('/rrhh/nominas')}
+          >
+            <h3 className="font-semibold text-lg">Nóminas</h3>
+            <p className="text-sm text-muted-foreground">Validación nóminas</p>
+          </Card>
+        </div>
       </div>
     </div>
   );
