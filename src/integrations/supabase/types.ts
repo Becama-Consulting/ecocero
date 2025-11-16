@@ -479,6 +479,44 @@ export type Database = {
           },
         ]
       }
+      of_history: {
+        Row: {
+          action: string
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          new_value: string | null
+          of_id: string
+          old_value: string | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_value?: string | null
+          of_id: string
+          old_value?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_value?: string | null
+          of_id?: string
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "of_history_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "fabrication_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll: {
         Row: {
           advisor_data: Json | null
