@@ -26,8 +26,7 @@ export const DashboardRRHH = () => {
     if (!loading && user) {
       const hasAccess = userRoles.some(r => 
         r.role === 'admin_global' || 
-        r.role === 'admin_departamento' ||
-        r.role === 'rrhh'
+        r.role === 'admin_departamento'
       );
       
       if (!hasAccess) {
