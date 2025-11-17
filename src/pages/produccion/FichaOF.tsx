@@ -233,6 +233,25 @@ const FichaOF = () => {
         changed_by: user?.id
       });
 
+      // 🔗 WEBHOOK N8N: Notificar cambio de estado
+      try {
+        await fetch('https://n8n-n8n.wgjrqh.easypanel.host/webhook/of-status-change', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            of_id: ofId,
+            old_status: oldStatus,
+            new_status: newStatus,
+            customer: of.customer,
+            changed_by: user?.id,
+            changed_at: new Date().toISOString()
+          })
+        });
+      } catch (webhookError) {
+        console.error('N8N webhook error:', webhookError);
+        // No bloqueamos el cambio de estado si falla el webhook
+      }
+
       toast.success(`Estado cambiado a: ${newStatus.replace('_', ' ').toUpperCase()}`);
       fetchOFData();
       fetchHistory();
