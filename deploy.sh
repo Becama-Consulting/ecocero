@@ -6,22 +6,22 @@ set -euo pipefail
 ########################################
 
 # Nombre lógico de la app (solo para logs)
-APP_NAME="ecozero"
+APP_NAME="ecocero"
 
 # Carpeta del repo en el VPS (el código fuente)
-REPO_DIR="/srv/repos/ecozero"
+REPO_DIR="/srv/repos/ecocero"
 
 # Carpeta generada por el build (Vite / React)
 DIST_SOURCE="${REPO_DIR}/dist"
 
 # Carpeta que está montada en el contenedor nginx como /usr/share/nginx/html
-WEB_ROOT="/home/ubuntu/ecozero/html"
+WEB_ROOT="/home/ubuntu/ecocero/html"
 
 # Carpeta donde está docker-compose.yml
-DOCKER_DIR="/home/ubuntu/ecozero"
+DOCKER_DIR="/home/ubuntu/ecocero"
 
 # Nombre del servicio/contendor que sirve la web
-CONTAINER_NAME="ecozero-web"
+CONTAINER_NAME="ecocero-web"
 
 
 ########################################

@@ -60,7 +60,7 @@
 
 ```bash
 # 1. Link proyecto (si no está linked)
-cd /Volumes/Proyectos/Trabajo/ecozero
+cd /Volumes/Proyectos/Trabajo/ecocero
 supabase link --project-ref <YOUR_PROJECT_REF>
 
 # 2. Aplicar migraciones
