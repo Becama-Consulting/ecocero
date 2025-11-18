@@ -93,6 +93,11 @@ const DashboardSupervisor = () => {
 
   const fetchMetrics = async () => {
     try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(today);
+      todayEnd.setHours(23, 59, 59, 999);
+      
       // Total OFs activas
       const { count: totalActive } = await supabase
         .from('fabrication_orders')
@@ -100,21 +105,25 @@ const DashboardSupervisor = () => {
         .in('status', ['pendiente', 'en_proceso']);
 
       // OFs creadas hoy
-      const today = new Date().toISOString().split('T')[0];
       const { count: newToday } = await supabase
         .from('fabrication_orders')
         .select('*', { count: 'exact', head: true })
-        .gte('created_at', `${today}T00:00:00`)
-        .lte('created_at', `${today}T23:59:59`);
+        .gte('created_at', today.toISOString())
+        .lte('created_at', todayEnd.toISOString());
 
-      // OFs completadas hoy
-      const { count: completedToday } = await supabase
-        .from('fabrication_orders')
-        .select('*', { count: 'exact', head: true })
-        .not('completed_at', 'is', null)
-        .gte('completed_at', `${today}T00:00:00`)
-        .lte('completed_at', `${today}T23:59:59`)
-        .or('status.eq.completada,status.eq.validada,status.eq.albarana');
+      // OFs completadas hoy - consultas separadas por status
+      const completedTodayPromises = ['completada', 'validada', 'albarana'].map(status =>
+        supabase
+          .from('fabrication_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', status)
+          .not('completed_at', 'is', null)
+          .gte('completed_at', today.toISOString())
+          .lte('completed_at', todayEnd.toISOString())
+      );
+      
+      const completedTodayResults = await Promise.all(completedTodayPromises);
+      const completedToday = completedTodayResults.reduce((sum, result) => sum + (result.count || 0), 0);
 
       // Alertas críticas
       const { count: criticalCount } = await supabase
@@ -175,7 +184,7 @@ const DashboardSupervisor = () => {
         .not('started_at', 'is', null)
         .lt('started_at', twoDaysAgo.toISOString());
 
-      // Eficiencia semanal
+      // Eficiencia semanal - consultas separadas por status
       const thisWeekStart = new Date();
       thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
       thisWeekStart.setHours(0, 0, 0, 0);
@@ -183,37 +192,47 @@ const DashboardSupervisor = () => {
       const lastWeekStart = new Date(thisWeekStart);
       lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-      const { count: thisWeekCompleted } = await supabase
-        .from('fabrication_orders')
-        .select('*', { count: 'exact', head: true })
-        .not('completed_at', 'is', null)
-        .gte('completed_at', thisWeekStart.toISOString())
-        .or('status.eq.completada,status.eq.validada,status.eq.albarana');
+      const thisWeekPromises = ['completada', 'validada', 'albarana'].map(status =>
+        supabase
+          .from('fabrication_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', status)
+          .not('completed_at', 'is', null)
+          .gte('completed_at', thisWeekStart.toISOString())
+      );
 
-      const { count: lastWeekCompleted } = await supabase
-        .from('fabrication_orders')
-        .select('*', { count: 'exact', head: true })
-        .not('completed_at', 'is', null)
-        .gte('completed_at', lastWeekStart.toISOString())
-        .lt('completed_at', thisWeekStart.toISOString())
-        .or('status.eq.completada,status.eq.validada,status.eq.albarana');
+      const lastWeekPromises = ['completada', 'validada', 'albarana'].map(status =>
+        supabase
+          .from('fabrication_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', status)
+          .not('completed_at', 'is', null)
+          .gte('completed_at', lastWeekStart.toISOString())
+          .lt('completed_at', thisWeekStart.toISOString())
+      );
 
-      const efficiency = lastWeekCompleted && lastWeekCompleted > 0
-        ? Math.round(((thisWeekCompleted || 0) / lastWeekCompleted) * 100)
+      const thisWeekResults = await Promise.all(thisWeekPromises);
+      const lastWeekResults = await Promise.all(lastWeekPromises);
+
+      const thisWeekCompleted = thisWeekResults.reduce((sum, result) => sum + (result.count || 0), 0);
+      const lastWeekCompleted = lastWeekResults.reduce((sum, result) => sum + (result.count || 0), 0);
+
+      const efficiency = lastWeekCompleted > 0
+        ? Math.round((thisWeekCompleted / lastWeekCompleted) * 100)
         : 100;
 
-      const efficiencyTrend = lastWeekCompleted && lastWeekCompleted > 0
-        ? Math.round((((thisWeekCompleted || 0) - lastWeekCompleted) / lastWeekCompleted) * 100)
+      const efficiencyTrend = lastWeekCompleted > 0
+        ? Math.round(((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100)
         : 0;
 
       const completionRate = newToday && newToday > 0
-        ? Math.round(((completedToday || 0) / newToday) * 100)
+        ? Math.round((completedToday / newToday) * 100)
         : 0;
 
       setMetrics({
         total_active_ofs: totalActive || 0,
         new_today: newToday || 0,
-        completed_today: completedToday || 0,
+        completed_today: completedToday,
         completion_rate: completionRate,
         critical_alerts: criticalCount || 0,
         active_employees: uniqueEmployees,
