@@ -111,10 +111,10 @@ const DashboardSupervisor = () => {
       const { count: completedToday } = await supabase
         .from('fabrication_orders')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['completada', 'validada', 'albarana'])
         .not('completed_at', 'is', null)
         .gte('completed_at', `${today}T00:00:00`)
-        .lte('completed_at', `${today}T23:59:59`);
+        .lte('completed_at', `${today}T23:59:59`)
+        .or('status.eq.completada,status.eq.validada,status.eq.albarana');
 
       // Alertas críticas
       const { count: criticalCount } = await supabase
@@ -186,17 +186,17 @@ const DashboardSupervisor = () => {
       const { count: thisWeekCompleted } = await supabase
         .from('fabrication_orders')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['completada', 'validada', 'albarana'])
         .not('completed_at', 'is', null)
-        .gte('completed_at', thisWeekStart.toISOString());
+        .gte('completed_at', thisWeekStart.toISOString())
+        .or('status.eq.completada,status.eq.validada,status.eq.albarana');
 
       const { count: lastWeekCompleted } = await supabase
         .from('fabrication_orders')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['completada', 'validada', 'albarana'])
         .not('completed_at', 'is', null)
         .gte('completed_at', lastWeekStart.toISOString())
-        .lt('completed_at', thisWeekStart.toISOString());
+        .lt('completed_at', thisWeekStart.toISOString())
+        .or('status.eq.completada,status.eq.validada,status.eq.albarana');
 
       const efficiency = lastWeekCompleted && lastWeekCompleted > 0
         ? Math.round(((thisWeekCompleted || 0) / lastWeekCompleted) * 100)
