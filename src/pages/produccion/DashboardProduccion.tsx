@@ -57,12 +57,13 @@ const DashboardProduccion = () => {
     try {
       setLoading(true);
       
+      // Consulta simplificada sin JOIN
       let query = supabase
         .from('fabrication_orders')
-        .select('*, production_lines(name)')
+        .select('*')
         .order('created_at', { ascending: false });
 
-              if (filters.status !== 'all' && filters.status) {
+      if (filters.status !== 'all' && filters.status) {
         const statusValue = filters.status as 'pendiente' | 'en_proceso' | 'completada' | 'validada' | 'albarana';
         query = query.eq('status', statusValue);
       }
@@ -72,7 +73,12 @@ const DashboardProduccion = () => {
 
       const { data, error } = await query;
       
-      console.log('🔍 Debug - Consulta fabrication_orders:', { data, error, dataLength: data?.length });
+      console.log('🔍 Debug - Consulta fabrication_orders:', { 
+        data, 
+        error, 
+        dataLength: data?.length,
+        firstItem: data?.[0]
+      });
       
       if (error) {
         console.error('❌ Error en consulta:', error);
