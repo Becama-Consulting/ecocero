@@ -12,6 +12,7 @@ import DashboardSupervisor from "./pages/produccion/DashboardSupervisor";
 import SecuenciacionProduccion from "./pages/produccion/SecuenciacionProduccion";
 import GestionNaves from "./pages/produccion/GestionNaves";
 import RegistroDatos from "./pages/produccion/RegistroDatos";
+import DetallePedido from "./pages/produccion/DetallePedido";
 import DetalleLinea from "./pages/produccion/DetalleLinea";
 import FichaOF from "./pages/produccion/FichaOF";
 import Alertas from "./pages/produccion/Alertas";
@@ -82,6 +83,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <RegistroDatos />
+              </ProtectedRoute>
+            }
+            />
+          <Route
+            path="/dashboard/produccion/pedido/:pedidoId"
+            element={
+              <ProtectedRoute allowedRoles={['admin_global', 'admin_departamento', 'supervisor', 'operario', 'quality']}>
+                <DetallePedido />
               </ProtectedRoute>
             }
           />
