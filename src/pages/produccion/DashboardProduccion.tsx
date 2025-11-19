@@ -43,7 +43,11 @@ const DashboardProduccion = () => {
   const [processingMaterial, setProcessingMaterial] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    console.log('🔐 Dashboard mounted - User:', user?.email, 'Filters:', filters);
+    if (!user) {
+      console.warn('⚠️ No user authenticated');
+      return;
+    }
     // Acceso permitido para: admin_global, admin_departamento, supervisor, operario, quality
     fetchOrdersData();
     setupRealtimeSubscriptions();
@@ -68,7 +72,12 @@ const DashboardProduccion = () => {
 
       const { data, error } = await query;
       
-      if (error) throw error;
+      console.log('🔍 Debug - Consulta fabrication_orders:', { data, error, dataLength: data?.length });
+      
+      if (error) {
+        console.error('❌ Error en consulta:', error);
+        throw error;
+      }
       
       setAllOFs(data || []);
 
