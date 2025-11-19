@@ -118,7 +118,7 @@ const DashboardSupervisor = () => {
         .lte('created_at', todayEnd.toISOString());
 
       // OFs completadas hoy - consultas separadas por status
-      const completedTodayPromises = ['completada', 'validada', 'albarana'].map(status =>
+      const completedTodayPromises = (['completada', 'validada', 'albarana'] as const).map(status =>
         supabase
           .from('fabrication_orders')
           .select('*', { count: 'exact', head: true })
@@ -198,7 +198,7 @@ const DashboardSupervisor = () => {
       const lastWeekStart = new Date(thisWeekStart);
       lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-      const thisWeekPromises = ['completada', 'validada', 'albarana'].map(status =>
+      const thisWeekPromises = (['completada', 'validada', 'albarana'] as const).map(status =>
         supabase
           .from('fabrication_orders')
           .select('*', { count: 'exact', head: true })
@@ -207,7 +207,7 @@ const DashboardSupervisor = () => {
           .gte('completed_at', thisWeekStart.toISOString())
       );
 
-      const lastWeekPromises = ['completada', 'validada', 'albarana'].map(status =>
+      const lastWeekPromises = (['completada', 'validada', 'albarana'] as const).map(status =>
         supabase
           .from('fabrication_orders')
           .select('*', { count: 'exact', head: true })

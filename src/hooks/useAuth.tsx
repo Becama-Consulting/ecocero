@@ -178,16 +178,16 @@ export const useAuth = () => {
       }
     }
     
-    // Supervisor va a su área
+    // Supervisor va al dashboard de supervisor
     if (userRoles.some(r => r.role === 'supervisor')) {
       switch(departamento) {
-        case 'produccion': return '/dashboard/produccion';
+        case 'produccion': return '/dashboard/produccion/supervisor';
         case 'logistica': return '/dashboard/logistica';
         case 'compras': return '/dashboard/compras';
         case 'rrhh': return '/dashboard/rrhh';
         case 'comercial': return '/dashboard/comercial';
         case 'administrativo': return '/dashboard/administrativo';
-        default: return '/dashboard/produccion';
+        default: return '/dashboard/produccion/supervisor';
       }
     }
     
