@@ -124,7 +124,7 @@ const DashboardProduccion = () => {
 
           // Calcular tiempo promedio real de OFs completadas en últimos 30 días
           // Consultas separadas para evitar error 400
-          const completedOFsPromises = ['completada', 'validada', 'albarana'].map(status =>
+          const completedOFsPromises = (['completada', 'validada', 'albarana'] as const).map(status =>
             supabase
               .from("fabrication_orders")
               .select("started_at, completed_at")
@@ -179,7 +179,7 @@ const DashboardProduccion = () => {
       today.setHours(0, 0, 0, 0);
       
       // Consultas separadas por status para evitar error 400
-      const completedTodayPromises = ['completada', 'validada', 'albarana'].map(status =>
+      const completedTodayPromises = (['completada', 'validada', 'albarana'] as const).map(status =>
         supabase
           .from("fabrication_orders")
           .select("id", { count: "exact", head: true })
