@@ -96,16 +96,13 @@ const DetallePedido = () => {
           priority,
           line_id,
           pedido_comercial,
+          material_preparado,
           production_lines(name)
         `)
         .eq('pedido_comercial', ofInicial.pedido_comercial)
         .order('created_at', { ascending: true });
 
       if (ofsError) throw ofsError;
-      
-      // DEBUG: Ver datos cargados
-      console.log('📊 OFs cargadas:', ofsData);
-      console.log('📊 OFs con líneas:', ofsData?.filter(of => of.line_id));
       
       setOfs(ofsData || []);
       
@@ -121,11 +118,18 @@ const DetallePedido = () => {
     try {
       const ofIds = ofs.map(of => of.id);
       
-      // Consultar materiales
+      // Consultar materiales por pedido_comercial
       const { data: materiales, error } = await supabase
         .from('bom_items')
-        .select('*')
-        .in('of_id', ofIds);
+        .select(`
+          *,
+          fabrication_orders!inner(
+            id,
+            sap_id,
+            pedido_comercial
+          )
+        `)
+        .eq('fabrication_orders.pedido_comercial', pedidoInfo?.pedido_comercial);
 
       if (error) throw error;
 
@@ -147,7 +151,7 @@ const DetallePedido = () => {
             material_codigo: mat.material_codigo,
             material_descripcion: mat.material_descripcion,
             cantidad_total: mat.cantidad_necesaria,
-            unidad: mat.unidad,
+            unidad: mat.unidad || 'UDS',
             estado: mat.estado,
             ofs_asociadas: [mat.of_id]
           });
@@ -176,13 +180,11 @@ const DetallePedido = () => {
           .in('of_id', ofIds);
       }
 
-      // Actualizar OFs
+      // Actualizar OFs - solo marcar material como preparado
       await supabase
         .from('fabrication_orders')
         .update({ 
-          status: 'material_solicitado',
-          material_preparado: true,
-          material_solicitado_at: new Date().toISOString()
+          material_preparado: true
         })
         .in('id', ofIds);
 
@@ -216,35 +218,22 @@ const DetallePedido = () => {
     }
   };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completada':
+        return <Badge className="bg-green-600 text-white hover:bg-green-700">✓ Completada</Badge>;
       case 'validada':
+        return <Badge className="bg-green-700 text-white hover:bg-green-800">✓✓ Validada</Badge>;
       case 'albarana':
-        return 'default';
+        return <Badge className="bg-green-800 text-white hover:bg-green-900">📋 Albaranada</Badge>;
       case 'en_proceso':
-        return 'secondary';
+        return <Badge className="bg-blue-600 text-white hover:bg-blue-700">⚙️ En Proceso</Badge>;
       case 'pendiente':
-        return 'outline';
-      default:
-        return 'outline';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completada':
-      case 'validada':
-      case 'albarana':
-        return 'text-green-600';
-      case 'en_proceso':
-        return 'text-blue-600';
-      case 'pendiente':
-        return 'text-orange-600';
+        return <Badge className="bg-orange-500 text-white hover:bg-orange-600">⏳ Pendiente</Badge>;
       case 'material_solicitado':
-        return 'text-purple-600';
+        return <Badge className="bg-purple-600 text-white hover:bg-purple-700">📦 Material Solicitado</Badge>;
       default:
-        return 'text-gray-600';
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -278,23 +267,12 @@ const DetallePedido = () => {
   const ofsQuadrilateral = ofs.filter(of => of.production_lines?.name === 'QUADRILATERAL');
   const ofsSinLinea = ofs.filter(of => !of.line_id);
   
-  // DEBUG: Mostrar filtros de líneas
-  console.log('🔍 Filtrado de líneas:', {
-    total: ofs.length,
-    econordik: ofsEconordik.length,
-    quadrilateral: ofsQuadrilateral.length,
-    sinLinea: ofsSinLinea.length,
-    ejemploOF: ofs[0]
-  });
-  
   const ofsCompleted = ofs.filter(of => ['completada', 'validada', 'albarana'].includes(of.status)).length;
   const progressPercentage = (ofsCompleted / ofs.length) * 100;
   const todosMaterialPreparado = ofs.every(of => of.material_preparado);
 
   // Si la mayoría no tienen línea, mostrar todas juntas. Si algunas sí tienen, mostrar por separado
   const mostrarPorLineas = ofsEconordik.length > 0 || ofsQuadrilateral.length > 0;
-  
-  console.log('📋 Mostrar por líneas:', mostrarPorLineas);
 
   return (
     <div className="space-y-6 p-8">
@@ -324,9 +302,7 @@ const DetallePedido = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Estado General</p>
-              <Badge variant={getStatusVariant(pedidoInfo.status)} className={getStatusColor(pedidoInfo.status)}>
-                {pedidoInfo.status}
-              </Badge>
+              {getStatusBadge(pedidoInfo.status)}
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total OFs</p>
@@ -397,9 +373,7 @@ const DetallePedido = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusVariant(of.status)} className={getStatusColor(of.status)}>
-                          {of.status}
-                        </Badge>
+                        {getStatusBadge(of.status)}
                       </TableCell>
                       <TableCell>
                         {of.material_preparado ? (
@@ -451,7 +425,7 @@ const DetallePedido = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {ofsNave1.map(of => (
+                      {ofsEconordik.map(of => (
                         <TableRow key={of.id}>
                           <TableCell className="font-mono font-bold">{of.sap_id || 'Sin código'}</TableCell>
                           <TableCell>{of.production_lines?.name || 'No asignada'}</TableCell>
@@ -461,9 +435,7 @@ const DetallePedido = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusVariant(of.status)} className={getStatusColor(of.status)}>
-                              {of.status}
-                            </Badge>
+                            {getStatusBadge(of.status)}
                           </TableCell>
                           <TableCell>
                             {of.material_preparado ? (
@@ -492,11 +464,14 @@ const DetallePedido = () => {
             </Card>
           )}
 
-          {/* Tabla NAVE 2 */}
-          {ofsNave2.length > 0 && (
+          {/* Tabla QUADRILATERAL */}
+          {ofsQuadrilateral.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>🏭 NAVE 2</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  🏭 Línea QUADRILATERAL
+                  <Badge variant="secondary">{ofsQuadrilateral.length} OFs</Badge>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -512,7 +487,7 @@ const DetallePedido = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {ofsNave2.map(of => (
+                      {ofsQuadrilateral.map(of => (
                         <TableRow key={of.id}>
                           <TableCell className="font-mono font-bold">{of.sap_id || 'Sin código'}</TableCell>
                           <TableCell>{of.production_lines?.name || 'No asignada'}</TableCell>
@@ -522,9 +497,69 @@ const DetallePedido = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusVariant(of.status)} className={getStatusColor(of.status)}>
-                              {of.status}
+                            {getStatusBadge(of.status)}
+                          </TableCell>
+                          <TableCell>
+                            {of.material_preparado ? (
+                              <span className="text-green-600 flex items-center gap-1">
+                                <CheckCircle className="h-4 w-4" /> Preparado
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">Pendiente</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => navigate(`/dashboard/produccion/of/${of.id}`)}
+                            >
+                              Ver Detalle
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tabla OFs Sin Línea */}
+          {ofsSinLinea.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  📦 Sin Línea Asignada (Accesorios/Materiales)
+                  <Badge variant="outline">{ofsSinLinea.length} OFs</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>SAP ID</TableHead>
+                        <TableHead>Línea</TableHead>
+                        <TableHead>Prioridad</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Material</TableHead>
+                        <TableHead>Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {ofsSinLinea.map(of => (
+                        <TableRow key={of.id}>
+                          <TableCell className="font-mono font-bold">{of.sap_id || 'Sin código'}</TableCell>
+                          <TableCell>{of.production_lines?.name || 'No asignada'}</TableCell>
+                          <TableCell>
+                            <Badge variant={(of.priority || 0) > 5 ? 'default' : 'outline'}>
+                              {of.priority || 0}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(of.status)}
                           </TableCell>
                           <TableCell>
                             {of.material_preparado ? (
