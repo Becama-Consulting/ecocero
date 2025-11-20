@@ -39,7 +39,14 @@ const DashboardProduccion = () => {
     try {
       setLoading(true);
       
-      // Consulta sin JOIN problemático
+      // Obtener líneas de producción primero
+      const { data: productionLines } = await supabase
+        .from('production_lines')
+        .select('id, name');
+      
+      const linesMap = new Map(productionLines?.map(line => [line.id, line.name]));
+      
+      // Consulta de OFs sin JOIN
       let query = supabase
         .from('fabrication_orders')
         .select('*')
@@ -57,7 +64,13 @@ const DashboardProduccion = () => {
       
       if (error) throw error;
       
-      setAllOFs(data || []);
+      // Mapear nombre de línea a cada OF
+      const dataWithLines = data?.map(of => ({
+        ...of,
+        line_name: of.line_id ? linesMap.get(of.line_id) : null
+      }));
+      
+      setAllOFs(dataWithLines || []);
 
       // Agrupar por cliente
       const ordersByCustomer = new Map<string, OrderSummary>();
@@ -343,7 +356,7 @@ const DashboardProduccion = () => {
                       </TableCell>
                       <TableCell>{of.customer}</TableCell>
                       <TableCell>
-                        {of.production_lines?.name || (
+                        {of.line_name || (
                           <span className="text-muted-foreground">No asignada</span>
                         )}
                       </TableCell>
