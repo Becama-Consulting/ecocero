@@ -39,17 +39,10 @@ const DashboardProduccion = () => {
     try {
       setLoading(true);
       
-      // PRUEBA DIAGNÓSTICO: Consulta más simple posible
-      console.log('🔍 Iniciando consulta...');
-      const { data: testData, error: testError } = await supabase
-        .from('fabrication_orders')
-        .select('id, customer, status');
-      
-      console.log('🧪 Prueba simple:', { testData, testError, count: testData?.length });
-      
+      // Consulta sin JOIN problemático
       let query = supabase
         .from('fabrication_orders')
-        .select('*, production_lines(name)')
+        .select('*')
         .order('created_at', { ascending: false });
 
               if (filters.status !== 'all' && filters.status) {
