@@ -70,6 +70,7 @@ async function sendPasswordResetEmail(
         from: 'EcoCero <onboarding@resend.dev>',
         to: email,
         subject: 'Recupera tu contraseña - EcoCero',
+        reply_to: 'soporte@ecocero.t4tproyect.com',
         html: `
           <!DOCTYPE html>
           <html lang="es">
