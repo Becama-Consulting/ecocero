@@ -6,17 +6,17 @@
  * 2. Validación de token: verifica que el token sea válido y no expirado
  * 3. Actualización de contraseña: cambia la contraseña usando token válido
  * 
- * Endpoints:
- * - POST /functions/v1/password-reset/request
- *   Body: { email: string }
+ * Uso:
+ * - POST /functions/v1/password-reset
+ *   Body: { action: 'request', email: string }
  *   Response: { success: boolean, message: string }
  * 
- * - POST /functions/v1/password-reset/validate
- *   Body: { token: string }
+ * - POST /functions/v1/password-reset
+ *   Body: { action: 'validate', token: string }
  *   Response: { valid: boolean, userId?: string }
  * 
- * - POST /functions/v1/password-reset/reset
- *   Body: { token: string, newPassword: string }
+ * - POST /functions/v1/password-reset
+ *   Body: { action: 'reset', token: string, newPassword: string }
  *   Response: { success: boolean, error?: string }
  */
 
@@ -293,11 +293,9 @@ serve(async (req) => {
     }
 
     // ==========================================
-    // ENDPOINT 2: Validar token de reset
+    // ACTION 2: Validar token de reset
     // ==========================================
-    if (path.includes('/validate')) {
-      const { token } = await req.json();
-      
+    if (action === 'validate') {
       if (!token) {
         return new Response(
           JSON.stringify({ valid: false, error: 'Token requerido' }),
@@ -338,11 +336,9 @@ serve(async (req) => {
     }
 
     // ==========================================
-    // ENDPOINT 3: Resetear contraseña
+    // ACTION 3: Resetear contraseña
     // ==========================================
-    if (path.includes('/reset')) {
-      const { token, newPassword } = await req.json();
-      
+    if (action === 'reset') {
       if (!token || !newPassword) {
         return new Response(
           JSON.stringify({ success: false, error: 'Token y nueva contraseña requeridos' }),
@@ -358,7 +354,7 @@ serve(async (req) => {
         );
       }
 
-      // Buscar y validar token (igual que en /validate)
+      // Buscar y validar token (igual que en validate)
       const { data: resetToken, error: tokenError } = await supabaseAdmin
         .from('password_reset_tokens')
         .select('*')
@@ -414,10 +410,10 @@ serve(async (req) => {
       );
     }
 
-    // Ruta no encontrada
+    // Acción no reconocida
     return new Response(
-      JSON.stringify({ error: 'Ruta no encontrada' }),
-      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Acción no válida' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {

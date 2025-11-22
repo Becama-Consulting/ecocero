@@ -46,8 +46,11 @@ const ResetPassword = () => {
 
   const validateToken = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('password-reset/validate', {
-        body: { token },
+      const { data, error } = await supabase.functions.invoke('password-reset', {
+        body: { 
+          action: 'validate',
+          token 
+        },
       });
 
       if (error) {
@@ -104,8 +107,12 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('password-reset/reset', {
-        body: { token, newPassword: password },
+      const { data, error } = await supabase.functions.invoke('password-reset', {
+        body: { 
+          action: 'reset',
+          token, 
+          newPassword: password 
+        },
       });
 
       if (error) {

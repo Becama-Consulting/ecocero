@@ -59,7 +59,7 @@ const TwoFactorVerification = () => {
     try {
       // Llamar a la Edge Function que verifica el TOTP
       const { data, error } = await supabase.functions.invoke('verify-totp', {
-        body: { userId, token: code },
+        body: { userId, code },
       });
 
       if (error) {

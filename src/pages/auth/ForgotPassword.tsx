@@ -53,8 +53,11 @@ const ForgotPassword = () => {
 
     try {
       // Llamar a la Edge Function para solicitar reset de contraseña
-      const { data, error } = await supabase.functions.invoke('password-reset/request', {
-        body: { email: email.trim() },
+      const { data, error } = await supabase.functions.invoke('password-reset', {
+        body: { 
+          action: 'request',
+          email: email.trim() 
+        },
       });
 
       if (error) {

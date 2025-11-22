@@ -74,31 +74,23 @@ const SecuritySettings = () => {
   const handleStartSetup = async () => {
     try {
       // Llamar a la Edge Function para generar el secreto en el backend
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-      
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/generate-2fa-secret`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('generate-2fa-secret', {
+        body: { 
+          userId: user!.id, 
+          email: user!.email 
+        },
+      });
 
-      if (!response.ok) {
+      if (error) {
         throw new Error('Error generando secreto 2FA');
       }
 
-      const { secret: secretBase32, qrCodeData } = await response.json();
+      const { secret: secretBase32, otpauthUrl } = data;
       
       setSecret(secretBase32);
 
       // Generar código QR para escanear con Google Authenticator
-      const qrCode = await QRCode.toDataURL(qrCodeData);
+      const qrCode = await QRCode.toDataURL(otpauthUrl);
       setQrCodeUrl(qrCode);
 
       setShowSetupDialog(true);
@@ -128,32 +120,18 @@ const SecuritySettings = () => {
 
     try {
       // VERIFICAR el código TOTP usando Edge Function
-      const { data: { session } } = await supabase.auth.getSession();
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-      
-      const verifyResponse = await fetch(
-        `${SUPABASE_URL}/functions/v1/verify-totp`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: user!.id,
-            token: verificationCode,
-            secret: secret, // Pasamos el secreto temporal para verificar antes de guardar
-          }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('verify-totp', {
+        body: {
+          code: verificationCode,
+          secret: secret, // Pasamos el secreto temporal para verificar antes de guardar
+        },
+      });
 
-      if (!verifyResponse.ok) {
+      if (error) {
         throw new Error('Error verificando código');
       }
 
-      const { valid } = await verifyResponse.json();
-
-      if (!valid) {
+      if (!data.valid) {
         toast({
           variant: "destructive",
           title: "Código incorrecto",
@@ -164,7 +142,7 @@ const SecuritySettings = () => {
       }
 
       // Guardar el secreto en la BD
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({
           two_factor_enabled: true,
@@ -172,8 +150,8 @@ const SecuritySettings = () => {
         })
         .eq('id', user!.id);
 
-      if (error) {
-        console.error('Error guardando 2FA:', error);
+      if (updateError) {
+        console.error('Error guardando 2FA:', updateError);
         toast({
           variant: "destructive",
           title: "Error",
