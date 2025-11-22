@@ -13,11 +13,14 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { user, loading, hasRole } = useAuth();
   const navigate = useNavigate();
 
+  console.log('🛡️ ProtectedRoute check:', { loading, hasUser: !!user, allowedRoles });
+
   useEffect(() => {
     if (!loading && user && allowedRoles && allowedRoles.length > 0) {
       const hasPermission = allowedRoles.some(role => hasRole(role as any));
       
       if (!hasPermission) {
+        console.log('❌ Sin permisos, redirigiendo a producción');
         toast.error('No tienes permisos para acceder a esta sección');
         navigate('/dashboard/produccion');
       }
@@ -25,6 +28,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }, [user, loading, allowedRoles, hasRole, navigate]);
 
   if (loading) {
+    console.log('⏳ ProtectedRoute: Auth cargando...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -39,6 +43,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   if (allowedRoles && allowedRoles.length > 0) {
     const hasPermission = allowedRoles.some(role => hasRole(role as any));
     if (!hasPermission) {
+      console.log('⛔ ProtectedRoute: Sin permisos necesarios');
       return null;
     }
   }

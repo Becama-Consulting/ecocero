@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EditOFModal, PhotoGallery, PhotoUpload } from "@/components/produccion";
+import { EditOFModal, PhotoGallery, PhotoUpload, ProductionStepFlow } from "@/components/produccion";
 import { downloadDeliveryPDF } from "@/lib/generateDeliveryPDF";
 
 interface FabricationOrder {
@@ -604,7 +604,7 @@ const FichaOF = () => {
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4">
-          <Button variant="outline" onClick={() => navigate(-1)} className="w-fit">
+          <Button variant="outline" onClick={() => navigate('/dashboard/produccion')} className="w-fit">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver al Dashboard
           </Button>
@@ -696,84 +696,27 @@ const FichaOF = () => {
           </CardContent>
         </Card>
 
-        {/* Pasos de Producción */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {STEP_NAMES.map((stepName, index) => {
-            const step = steps.find(s => s.step_number === index + 1);
-            return (
-              <Card key={index} className={`border-l-4 ${step ? getStepStatusColor(step.status) : "border-muted"}`}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <span className="text-2xl">{step ? getStepStatusIcon(step.status) : "○"}</span>
-                    <span>{index + 1}. {stepName}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {step ? (
-                    <div className="space-y-3">
-                      <p className="text-sm">
-                        <span className="font-medium">Estado:</span>{" "}
-                        {step.status === "completado" || step.status === "completada" ? "✓ COMPLETADO" :
-                         step.status === "en_proceso" ? "⊘ EN PROGRESO" : "○ PENDIENTE"}
-                      </p>
-                      <div>
-                        <Label htmlFor={`operario-${step.id}`} className="text-sm">Asignar Operario</Label>
-                        <Select value={step.assigned_to || ''} onValueChange={(value) => handleAssignOperario(step.id, value)}>
-                          <SelectTrigger id={`operario-${step.id}`} className="mt-1">
-                            <SelectValue placeholder="Sin asignar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Sin asignar</SelectItem>
-                            {operarios.map((op) => (<SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {step.started_at && (<p className="text-sm"><span className="font-medium">Inicio:</span> {new Date(step.started_at).toLocaleString("es-ES")}</p>)}
-                      {step.completed_at && (<p className="text-sm"><span className="font-medium">Completado:</span> {new Date(step.completed_at).toLocaleString("es-ES")}</p>)}
-                      {step.data_json && Object.keys(step.data_json).length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-sm font-medium">Datos capturados:</p>
-                          <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-auto">{JSON.stringify(step.data_json, null, 2)}</pre>
-                        </div>
-                      )}
-                      
-                      {/* SECCIÓN DE FOTOS */}
-                      <div className="border-t pt-4 mt-4">
-                        <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                          📷 Fotos del Paso ({step.photos?.length || 0})
-                        </h4>
-
-                        {/* Upload de fotos */}
-                        {step.status !== 'completada' && step.status !== 'completado' && (
-                          <div className="mb-4">
-                            <PhotoUpload
-                              onPhotoUploaded={(url) => handlePhotoUploaded(step.id, url)}
-                              existingPhotos={[]}
-                            />
-                          </div>
-                        )}
-
-                        {/* Galería de fotos */}
-                        {step.photos && step.photos.length > 0 && (
-                          <PhotoGallery
-                            photos={step.photos}
-                            metadata={step.data_json?.photoMetadata || {}}
-                            onValidate={(photoUrl, approved, comment) => handleValidatePhoto(step.id, photoUrl, approved, comment)}
-                            onDelete={(photoUrl) => handleDeletePhoto(step.id, photoUrl)}
-                            canValidate={user?.id ? true : false}
-                            canDelete={true}
-                          />
-                        )}
-                      </div>
-
-                      <div className="mt-4 flex gap-2">{getStepActions(step, index + 1)}</div>
-                    </div>
-                  ) : (<p className="text-sm text-muted-foreground">Pendiente de asignación</p>)}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        {/* Pasos de Producción - Flujo Secuencial */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🏭 Flujo de Producción</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProductionStepFlow
+              ofId={ofId as string}
+              steps={steps.map(s => ({
+                ...s,
+                step_code: s.step_name || 'GENERIC',
+                materials: [],
+                observations: null,
+                validated_at: null,
+                validated_by: null
+              }))}
+              currentUser={user}
+              onStepUpdate={fetchOFData}
+            />
+          </CardContent>
+        </Card>
 
         {/* Historial de Cambios */}
         <Card>

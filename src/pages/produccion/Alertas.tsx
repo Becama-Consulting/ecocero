@@ -52,86 +52,28 @@ const Alertas = () => {
 
   const fetchAlerts = async () => {
     try {
-      const { data, error } = await supabase
-        .from("alerts")
-        .select(`
-          *,
-          fabrication_order:related_of_id(sap_id, customer)
-        `)
-        .is("resolved_at", null)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setAlerts(data || []);
+      // TODO: Implementar tabla alerts en la base de datos
+      console.log("Sistema de alertas pendiente de implementar");
+      setAlerts([]);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching alerts:", error);
-      toast.error("Error al cargar alertas");
       setLoading(false);
     }
   };
 
   const fetchStats = async () => {
     try {
-      const { data: severityData } = await supabase
-        .from('alerts')
-        .select('severity')
-        .is('resolved_at', null);
-
-      const critical = severityData?.filter(a => a.severity === 'critical').length || 0;
-      const warning = severityData?.filter(a => a.severity === 'warning').length || 0;
-      const info = severityData?.filter(a => a.severity === 'info').length || 0;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const { count: resolvedToday } = await supabase
-        .from('alerts')
-        .select('id', { count: 'exact', head: true })
-        .gte('resolved_at', today.toISOString());
-
-      const { data: recentResolved } = await supabase
-        .from('alerts')
-        .select('created_at, resolved_at')
-        .not('resolved_at', 'is', null)
-        .gte('resolved_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-      let avgTime = 0;
-      if (recentResolved && recentResolved.length > 0) {
-        const totalMinutes = recentResolved.reduce((sum, alert) => {
-          const created = new Date(alert.created_at).getTime();
-          const resolved = new Date(alert.resolved_at!).getTime();
-          return sum + ((resolved - created) / (1000 * 60));
-        }, 0);
-        avgTime = Math.round(totalMinutes / recentResolved.length);
-      }
-
+      // TODO: Implementar tabla alerts en la base de datos
       setStats({
-        total: critical + warning + info,
-        critical,
-        warning,
-        info,
-        resolved_today: resolvedToday || 0,
-        avg_resolution_time: avgTime
+        total: 0,
+        critical: 0,
+        warning: 0,
+        info: 0,
+        resolved_today: 0,
+        avg_resolution_time: 0
       });
-
-      const { data: typeData } = await supabase
-        .from('alerts')
-        .select('type')
-        .is('resolved_at', null);
-
-      const typeCounts: Record<string, number> = {};
-      typeData?.forEach(alert => {
-        typeCounts[alert.type] = (typeCounts[alert.type] || 0) + 1;
-      });
-
-      const chartData = Object.entries(typeCounts).map(([type, count]) => ({
-        type: type.replace(/_/g, ' ').toUpperCase(),
-        count
-      }));
-
-      setAlertsByType(chartData);
-
+      setAlertsByType([]);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -152,55 +94,24 @@ const Alertas = () => {
 
   const fetchHistory = async () => {
     try {
-      const { data, error } = await supabase
-        .from('alerts')
-        .select(`
-          *,
-          fabrication_order:related_of_id(sap_id, customer)
-        `)
-        .not('resolved_at', 'is', null)
-        .order('resolved_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      setHistoryAlerts(data || []);
+      // TODO: Implementar tabla alerts en la base de datos
+      setHistoryAlerts([]);
     } catch (error) {
       console.error('Error fetching history:', error);
     }
   };
 
   const setupRealtimeSubscriptions = () => {
-    const channel = supabase
-      .channel("alerts")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "alerts" },
-        () => {
-          fetchAlerts();
-          fetchStats();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // TODO: Implementar suscripción realtime cuando exista tabla alerts
+    return () => {};
   };
 
   const resolveAlert = async (alertId: string) => {
     try {
-      const { error } = await supabase
-        .from("alerts")
-        .update({ resolved_at: new Date().toISOString() })
-        .eq("id", alertId);
-
-      if (error) throw error;
-      toast.success("Alerta resuelta");
-      fetchAlerts();
-      fetchStats();
+      // TODO: Implementar tabla alerts en la base de datos
+      toast.info("Sistema de alertas pendiente de implementar");
     } catch (error) {
       console.error("Error resolving alert:", error);
-      toast.error("Error al resolver alerta");
     }
   };
 
@@ -260,9 +171,9 @@ const Alertas = () => {
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
+          <Button variant="outline" onClick={() => navigate('/dashboard/produccion')} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver al Dashboard
+            Volver al Dashboard al Dashboard
           </Button>
           <h1 className="text-3xl font-bold text-foreground">Sistema de Alertas</h1>
           <p className="text-muted-foreground mt-1">

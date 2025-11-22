@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, ArrowLeft, Key } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, Key, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { GenerateCredentialsModal } from "@/components/admin/GenerateCredentialsModal";
 import { UserCredentialsModal } from "@/components/admin/UserCredentialsModal";
@@ -47,6 +47,23 @@ const AdminUsers = () => {
   const [showCredentials, setShowCredentials] = useState(false);
   const [createdUserEmail, setCreatedUserEmail] = useState("");
   const [createdUserName, setCreatedUserName] = useState("");
+  
+  // Estado para controlar qué secciones están expandidas
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    admin_global: false,
+    admin_departamento: false,
+    supervisor: false,
+    operario: false,
+    quality: false,
+    sin_roles: false
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   // Verify admin access
   useEffect(() => {
@@ -482,7 +499,8 @@ const AdminUsers = () => {
       />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Resumen */}
         <Card>
           <CardHeader>
             <CardTitle>Usuarios del Sistema</CardTitle>
@@ -490,68 +508,536 @@ const AdminUsers = () => {
               {users.length} usuario{users.length !== 1 ? "s" : ""} registrado{users.length !== 1 ? "s" : ""}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {loading && users.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : users.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No hay usuarios registrados</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Departamento</TableHead>
-                      <TableHead>Roles</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((userData) => (
-                      <TableRow key={userData.id}>
-                        <TableCell className="font-mono text-sm">{userData.email}</TableCell>
-                        <TableCell>{userData.name}</TableCell>
-                        <TableCell>{getDepartamentoLabel(userData.departamento)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {userData.roles.length > 0 ? (
-                              userData.roles.map((role) => (
+        </Card>
+
+        {loading && users.length === 0 ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : users.length === 0 ? (
+          <Card>
+            <CardContent className="py-8">
+              <p className="text-center text-muted-foreground">No hay usuarios registrados</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Admin Global */}
+            {users.filter(u => u.roles.includes("admin_global")).length > 0 && (
+              <Card className="border-l-4 border-l-red-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-red-500 text-white">
+                        Admin Global
+                      </Badge>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({users.filter(u => u.roles.includes("admin_global")).length})
+                      </span>
+                    </div>
+                    {users.filter(u => u.roles.includes("admin_global")).length > 4 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('admin_global')}
+                      >
+                        {expandedSections.admin_global ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-2" />
+                            Mostrar menos
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2" />
+                            Ver todos
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>Control total del sistema</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Departamento</TableHead>
+                          <TableHead>Todos los Roles</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users
+                          .filter(u => u.roles.includes("admin_global"))
+                          .slice(0, expandedSections.admin_global ? undefined : 4)
+                          .map((userData) => (
+                            <TableRow key={userData.id}>
+                              <TableCell className="font-mono text-sm">{userData.email}</TableCell>
+                              <TableCell className="font-medium">{userData.name}</TableCell>
+                              <TableCell>{getDepartamentoLabel(userData.departamento)}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {userData.roles.map((role) => (
+                                    <Badge
+                                      key={role}
+                                      className={`${getRoleBadgeColor(role)} text-white text-xs`}
+                                    >
+                                      {role.replace(/_/g, " ")}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteUser(userData.id, userData.name)}
+                                  disabled={loading || user?.id === userData.id}
+                                  className="touch-target"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Admin Departamento */}
+            {users.filter(u => u.roles.includes("admin_departamento") && !u.roles.includes("admin_global")).length > 0 && (
+              <Card className="border-l-4 border-l-orange-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-orange-500 text-white">
+                        Admin Departamento
+                      </Badge>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({users.filter(u => u.roles.includes("admin_departamento") && !u.roles.includes("admin_global")).length})
+                      </span>
+                    </div>
+                    {users.filter(u => u.roles.includes("admin_departamento") && !u.roles.includes("admin_global")).length > 4 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('admin_departamento')}
+                      >
+                        {expandedSections.admin_departamento ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-2" />
+                            Mostrar menos
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2" />
+                            Ver todos
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>Administradores de departamentos específicos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Departamento</TableHead>
+                        <TableHead>Roles</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users
+                        .filter(u => u.roles.includes("admin_departamento") && !u.roles.includes("admin_global"))
+                        .slice(0, expandedSections.admin_departamento ? undefined : 4)
+                        .map((userData) => (
+                        <TableRow key={userData.id}>
+                          <TableCell className="font-mono text-sm">{userData.email}</TableCell>
+                          <TableCell className="font-medium">{userData.name}</TableCell>
+                          <TableCell>{getDepartamentoLabel(userData.departamento)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {userData.roles.map((role) => (
                                 <Badge
                                   key={role}
                                   className={`${getRoleBadgeColor(role)} text-white text-xs`}
                                 >
                                   {role.replace(/_/g, " ")}
                                 </Badge>
-                              ))
-                            ) : (
-                              <Badge variant="outline" className="text-xs">
-                                Sin roles
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteUser(userData.id, userData.name)}
-                            disabled={loading || user?.id === userData.id}
-                            className="touch-target"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteUser(userData.id, userData.name)}
+                              disabled={loading}
+                              className="touch-target"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Supervisores */}
+            {users.filter(u => u.roles.includes("supervisor") && !u.roles.includes("admin_global") && !u.roles.includes("admin_departamento")).length > 0 && (
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-blue-500 text-white">
+                        Supervisor
+                      </Badge>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({users.filter(u => u.roles.includes("supervisor") && !u.roles.includes("admin_global") && !u.roles.includes("admin_departamento")).length})
+                      </span>
+                    </div>
+                    {users.filter(u => u.roles.includes("supervisor") && !u.roles.includes("admin_global") && !u.roles.includes("admin_departamento")).length > 4 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('supervisor')}
+                      >
+                        {expandedSections.supervisor ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-2" />
+                            Mostrar menos
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2" />
+                            Ver todos
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>Supervisión de operaciones</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Departamento</TableHead>
+                        <TableHead>Roles</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users
+                        .filter(u => u.roles.includes("supervisor") && !u.roles.includes("admin_global") && !u.roles.includes("admin_departamento"))
+                        .slice(0, expandedSections.supervisor ? undefined : 4)
+                        .map((userData) => (
+                        <TableRow key={userData.id}>
+                          <TableCell className="font-mono text-sm">{userData.email}</TableCell>
+                          <TableCell className="font-medium">{userData.name}</TableCell>
+                          <TableCell>{getDepartamentoLabel(userData.departamento)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {userData.roles.map((role) => (
+                                <Badge
+                                  key={role}
+                                  className={`${getRoleBadgeColor(role)} text-white text-xs`}
+                                >
+                                  {role.replace(/_/g, " ")}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteUser(userData.id, userData.name)}
+                              disabled={loading}
+                              className="touch-target"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Operarios */}
+            {users.filter(u => u.roles.includes("operario") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor"].includes(r))).length > 0 && (
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-500 text-white">
+                        Operario
+                      </Badge>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({users.filter(u => u.roles.includes("operario") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor"].includes(r))).length})
+                      </span>
+                    </div>
+                    {users.filter(u => u.roles.includes("operario") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor"].includes(r))).length > 4 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('operario')}
+                      >
+                        {expandedSections.operario ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-2" />
+                            Mostrar menos
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2" />
+                            Ver todos
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>Personal de producción</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Departamento</TableHead>
+                        <TableHead>Roles</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users
+                        .filter(u => u.roles.includes("operario") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor"].includes(r)))
+                        .slice(0, expandedSections.operario ? undefined : 4)
+                        .map((userData) => (
+                        <TableRow key={userData.id}>
+                          <TableCell className="font-mono text-sm">{userData.email}</TableCell>
+                          <TableCell className="font-medium">{userData.name}</TableCell>
+                          <TableCell>{getDepartamentoLabel(userData.departamento)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {userData.roles.map((role) => (
+                                <Badge
+                                  key={role}
+                                  className={`${getRoleBadgeColor(role)} text-white text-xs`}
+                                >
+                                  {role.replace(/_/g, " ")}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteUser(userData.id, userData.name)}
+                              disabled={loading}
+                              className="touch-target"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quality */}
+            {users.filter(u => u.roles.includes("quality") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor", "operario"].includes(r))).length > 0 && (
+              <Card className="border-l-4 border-l-purple-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-purple-500 text-white">
+                        Quality
+                      </Badge>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({users.filter(u => u.roles.includes("quality") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor", "operario"].includes(r))).length})
+                      </span>
+                    </div>
+                    {users.filter(u => u.roles.includes("quality") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor", "operario"].includes(r))).length > 4 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('quality')}
+                      >
+                        {expandedSections.quality ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-2" />
+                            Mostrar menos
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2" />
+                            Ver todos
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>Control de calidad</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Departamento</TableHead>
+                        <TableHead>Roles</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users
+                        .filter(u => u.roles.includes("quality") && !u.roles.some(r => ["admin_global", "admin_departamento", "supervisor", "operario"].includes(r)))
+                        .slice(0, expandedSections.quality ? undefined : 4)
+                        .map((userData) => (
+                        <TableRow key={userData.id}>
+                          <TableCell className="font-mono text-sm">{userData.email}</TableCell>
+                          <TableCell className="font-medium">{userData.name}</TableCell>
+                          <TableCell>{getDepartamentoLabel(userData.departamento)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {userData.roles.map((role) => (
+                                <Badge
+                                  key={role}
+                                  className={`${getRoleBadgeColor(role)} text-white text-xs`}
+                                >
+                                  {role.replace(/_/g, " ")}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteUser(userData.id, userData.name)}
+                              disabled={loading}
+                              className="touch-target"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Sin Roles */}
+            {users.filter(u => u.roles.length === 0).length > 0 && (
+              <Card className="border-l-4 border-l-gray-300">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        Sin Roles
+                      </Badge>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({users.filter(u => u.roles.length === 0).length})
+                      </span>
+                    </div>
+                    {users.filter(u => u.roles.length === 0).length > 4 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('sin_roles')}
+                      >
+                        {expandedSections.sin_roles ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 mr-2" />
+                            Mostrar menos
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 mr-2" />
+                            Ver todos
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>Usuarios sin roles asignados</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Departamento</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users
+                        .filter(u => u.roles.length === 0)
+                        .slice(0, expandedSections.sin_roles ? undefined : 4)
+                        .map((userData) => (
+                        <TableRow key={userData.id}>
+                          <TableCell className="font-mono text-sm">{userData.email}</TableCell>
+                          <TableCell className="font-medium">{userData.name}</TableCell>
+                          <TableCell>{getDepartamentoLabel(userData.departamento)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteUser(userData.id, userData.name)}
+                              disabled={loading}
+                              className="touch-target"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
       </main>
 
       {/* Credentials Modal */}

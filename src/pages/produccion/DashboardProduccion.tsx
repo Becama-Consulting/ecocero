@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Bell, ArrowLeft, Package2 } from "lucide-react";
 import { toast } from "sonner";
+import { ProductionOrderDetailModal } from "@/components/produccion";
 
 interface OrderSummary {
   pedido_comercial: string;
@@ -37,6 +38,8 @@ const DashboardProduccion = () => {
     fecha_hasta: ''
   });
   const [productionLines, setProductionLines] = useState<any[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -179,6 +182,16 @@ const DashboardProduccion = () => {
     navigate('/auth');
   };
 
+  const openDetailModal = (order: any) => {
+    setSelectedOrder(order);
+    setIsDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setSelectedOrder(null);
+    setIsDetailModalOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -194,7 +207,7 @@ const DashboardProduccion = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {hasRole('admin_global') && (
-              <Button variant="ghost" onClick={() => navigate('/dashboard/global')}>
+              <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Dashboard Global
               </Button>
@@ -380,19 +393,33 @@ const DashboardProduccion = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            // Obtener el primer OF de este pedido para usar como pedidoId
-                            const firstOF = allOFs.find(of => of.pedido_comercial === order.pedido_comercial);
-                            if (firstOF) {
-                              navigate(`/dashboard/produccion/pedido/${firstOF.id}`);
-                            }
-                          }}
-                        >
-                          <Package2 className="mr-2 h-4 w-4" />
-                          Ver Pedido
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const firstOF = allOFs.find(of => of.pedido_comercial === order.pedido_comercial);
+                              if (firstOF) {
+                                openDetailModal(firstOF);
+                              }
+                            }}
+                          >
+                            Ver Detalles
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              // Obtener el primer OF de este pedido para usar como pedidoId
+                              const firstOF = allOFs.find(of => of.pedido_comercial === order.pedido_comercial);
+                              if (firstOF) {
+                                navigate(`/dashboard/produccion/pedido/${firstOF.id}`);
+                              }
+                            }}
+                          >
+                            <Package2 className="mr-2 h-4 w-4" />
+                            Ver Pedido
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

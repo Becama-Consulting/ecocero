@@ -2,9 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/auth/Index.tsx";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Auth from "./pages/auth/Auth.tsx";
+import TwoFactorVerification from "./pages/auth/TwoFactorVerification";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import SecuritySettings from "./pages/profile/SecuritySettings";
 import AdminUsers from "./pages/admin/AdminUsers";
 import DashboardGlobal from "./pages/admin/DashboardGlobal";
 import DashboardProduccion from "./pages/produccion/DashboardProduccion";
@@ -27,11 +30,41 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
+          {/* ========================================
+              RUTAS DE AUTENTICACIÓN Y SEGURIDAD
+              ======================================== */}
+          {/* Login principal */}
           <Route path="/auth" element={<Auth />} />
+          
+          {/* Verificación en dos pasos (2FA) */}
+          <Route path="/auth/2fa" element={<TwoFactorVerification />} />
+          
+          {/* Recuperación de contraseña */}
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
+          
+          {/* Configuración de seguridad (2FA) - ruta protegida */}
           <Route
-            path="/dashboard/global"
+            path="/profile/security"
+            element={
+              <ProtectedRoute>
+                <SecuritySettings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ========================================
+              RUTAS DE ADMINISTRACIÓN
+              ======================================== */}
+          <Route
+            path="/admin/dashboard"
             element={
               <ProtectedRoute>
                 <DashboardGlobal />
@@ -184,11 +217,7 @@ const App = () => (
           />
           <Route
             path="/"
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/auth" replace />}
           />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

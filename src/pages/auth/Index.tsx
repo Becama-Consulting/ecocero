@@ -1,286 +1,72 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, LogOut, Factory, Package, Users, BarChart3, Settings } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const Index = () => {
-  const { user, signOut, userRoles, isAdmin, getDashboardByRole, loading } = useAuth();
-  const navigate = useNavigate();
-  const hasRedirected = useRef(false);
-  const isRedirecting = useRef(false);
-  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const { user, userRoles, loading } = useAuth();
+  const [dashboardPath, setDashboardPath] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleRedirect = async () => {
-      // Prevenir múltiples ejecuciones
-      if (isRedirecting.current || hasRedirected.current) return;
-      
-      // Esperar a que termine de cargar
-      if (loading) return;
-      
-      // Si no hay usuario, no hacer nada (ProtectedRoute manejará redirect a /auth)
-      if (!user) return;
-      
-      // CRÍTICO: Esperar a que userRoles esté cargado
-      if (userRoles.length === 0) return;
-      
-      // Si es admin_global, quedarse en esta página (selector de módulos)
-      if (userRoles.some(r => r.role === 'admin_global')) return;
-      
-      // Si no es admin_global, redirigir a su dashboard específico
-      isRedirecting.current = true;
-      const dashboardRoute = await getDashboardByRole();
-      
-      if (dashboardRoute && dashboardRoute !== '/') {
-        hasRedirected.current = true;
-        navigate(dashboardRoute, { replace: true });
+    let isMounted = true;
+
+    if (!loading && user) {
+      // Si hay roles, calcular dashboard inmediatamente
+      if (userRoles.length > 0) {
+        // Admin global
+        if (userRoles.some(r => r.role === 'admin_global')) {
+          if (isMounted) setDashboardPath('/admin/dashboard');
+          return;
+        }
+        
+        // Otros roles van a producción por ahora
+        if (isMounted) setDashboardPath('/dashboard/produccion');
+      } else {
+        // Si no hay roles después de 2 segundos, redirigir a producción
+        const timeout = setTimeout(() => {
+          if (isMounted) setDashboardPath('/dashboard/produccion');
+        }, 2000);
+        
+        return () => clearTimeout(timeout);
       }
-      
-      isRedirecting.current = false;
-    };
-
-    handleRedirect();
-  }, [loading, user, userRoles, getDashboardByRole, navigate]);
-  
-  // Reset hasRedirected cuando el usuario cambia
-  useEffect(() => {
-    if (!user) {
-      hasRedirected.current = false;
-      isRedirecting.current = false;
     }
-  }, [user]);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [loading, user, userRoles]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-success/10 via-background to-info/10">
-      {/* Header with Logo and User Info */}
-      <header className="bg-white border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="gradient-primary rounded-full p-2">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold">EcoCero</h1>
-              <p className="text-xs text-muted-foreground">Automatización Integral</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-medium">{user?.email}</p>
-              {userRoles.length > 0 && (
-                <p className="text-xs text-muted-foreground capitalize">
-                  {userRoles[0].role.replace(/_/g, " ")}
-                </p>
-              )}
-            </div>
-            {/* Admin button - only visible to admin_global */}
-            {userRoles.some((r) => r.role === "admin_global") && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAdminDialog(true)}
-                className="touch-target"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Admin Panel
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="touch-target"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Salir
-            </Button>
-          </div>
+  // Mostrar loader mientras carga la autenticación
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-success/10 via-background to-info/10">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Cargando...</p>
         </div>
-      </header>
+      </div>
+    );
+  }
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 md:py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
-            Bienvenido al Sistema
-          </h2>
-          <p className="text-muted-foreground">
-            Selecciona un módulo para comenzar
-          </p>
+  // Si no hay usuario, redirigir a login
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Esperar a que el dashboard esté calculado
+  if (!dashboardPath) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-success/10 via-background to-info/10">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Verificando permisos...</p>
         </div>
+      </div>
+    );
+  }
 
-        {/* Module Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-          {/* Producción Module */}
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-success/5 to-success/10 border-success/20 cursor-pointer border-l-4 border-l-success"
-            onClick={() => navigate("/dashboard/produccion")}>
-
-            <CardHeader>
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="status-success rounded-lg p-2">
-                  <Factory className="w-6 h-6" />
-                </div>
-                <CardTitle>Producción</CardTitle>
-              </div>
-              <CardDescription>
-                Dashboard en tiempo real, naves digitales, registro de datos
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => navigate("/dashboard/produccion")}
-                className="w-full status-success hover:bg-success/90 touch-target"
-              >
-                Acceder →
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Logística Module */}
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-info/5 to-info/10 border-info/20 cursor-pointer border-l-4 border-l-info opacity-50">
-            <CardHeader>
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="status-info rounded-lg p-2">
-                  <Package className="w-6 h-6" />
-                </div>
-                <CardTitle>Logística</CardTitle>
-              </div>
-              <CardDescription>
-                Optimización de envíos, seguimiento, validación
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="outline" disabled>
-                Próximamente
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* RRHH Module */}
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20 cursor-pointer border-l-4 border-l-warning"
-            onClick={() => navigate("/dashboard/rrhh")}>
-
-            <CardHeader>
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="status-warning rounded-lg p-2">
-                  <Users className="w-6 h-6" />
-                </div>
-                <CardTitle>RRHH</CardTitle>
-              </div>
-              <CardDescription>
-                Fichajes, turnos, nóminas, gestión de personal
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => navigate("/dashboard/rrhh")}
-                className="w-full status-warning hover:bg-warning/90 touch-target"
-              >
-                Acceder →
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Dashboards Module */}
-          <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-secondary/5 to-secondary/10 border-secondary/20 cursor-pointer border-l-4 border-l-secondary opacity-50">
-            <CardHeader>
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="bg-secondary text-secondary-foreground rounded-lg p-2">
-                  <BarChart3 className="w-6 h-6" />
-                </div>
-                <CardTitle>Dashboards</CardTitle>
-              </div>
-              <CardDescription>
-                Métricas ejecutivas, KPIs, análisis
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="outline" disabled>
-                Próximamente
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Status Card */}
-        <Card className="mt-6 bg-success-light border-success">
-          <CardHeader>
-            <CardTitle className="text-success">✓ Sistema Activo</CardTitle>
-            <CardDescription>
-              Lovable Cloud habilitado • Autenticación configurada • Base de datos lista
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-success">2</p>
-                <p className="text-xs text-muted-foreground">Líneas de Producción</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-success">0</p>
-                <p className="text-xs text-muted-foreground">OFs Activas</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-success">1</p>
-                <p className="text-xs text-muted-foreground">Usuario Activo</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-success">MVP</p>
-                <p className="text-xs text-muted-foreground">Fase 0 Completada</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-
-      {/* Admin Dialog */}
-      <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="bg-primary text-primary-foreground rounded-lg p-2">
-                <Users className="w-5 h-5" />
-              </div>
-              Admin Panel
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Gestión de usuarios, roles y permisos del sistema
-            </p>
-            <Button 
-              onClick={() => {
-                setShowAdminDialog(false);
-                navigate('/admin/users');
-              }}
-              className="w-full bg-primary hover:bg-primary/90"
-            >
-              Acceder a Gestión de Usuarios →
-            </Button>
-            <Button 
-              onClick={() => {
-                setShowAdminDialog(false);
-                navigate('/dashboard/global');
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              Ver Dashboard Global
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+  // Redirigir al dashboard correspondiente
+  return <Navigate to={dashboardPath} replace />;
 };
 
 export default Index;

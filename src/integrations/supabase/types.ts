@@ -993,6 +993,33 @@ export type Database = {
           },
         ]
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1001,6 +1028,8 @@ export type Database = {
           id: string
           line_id: string | null
           name: string
+          two_factor_enabled: boolean
+          two_factor_secret: string | null
           updated_at: string
         }
         Insert: {
@@ -1010,6 +1039,8 @@ export type Database = {
           id: string
           line_id?: string | null
           name: string
+          two_factor_enabled?: boolean
+          two_factor_secret?: string | null
           updated_at?: string
         }
         Update: {
@@ -1019,6 +1050,8 @@ export type Database = {
           id?: string
           line_id?: string | null
           name?: string
+          two_factor_enabled?: boolean
+          two_factor_secret?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1288,7 +1321,7 @@ export type Database = {
         | "completada"
         | "validada"
         | "albarana"
-      step_status: "pendiente" | "en_proceso" | "completado" | "error"
+      step_status: "pendiente" | "en_proceso" | "validacion_pendiente" | "completado" | "bloqueado" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1440,7 +1473,7 @@ export const Constants = {
         "validada",
         "albarana",
       ],
-      step_status: ["pendiente", "en_proceso", "completado", "error"],
+      step_status: ["pendiente", "en_proceso", "validacion_pendiente", "completado", "bloqueado", "error"],
     },
   },
 } as const

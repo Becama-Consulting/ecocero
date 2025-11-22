@@ -1,49 +1,205 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Zap } from "lucide-react";
+import { Zap, Loader2 } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signIn, user, loading: authLoading } = useAuth();
+  const { signIn, user, loading: authLoading, userRoles } = useAuth();
   const [loading, setLoading] = useState(false);
-  const hasRedirected = useRef(false);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // Redirect if already authenticated
+  // Redirect según rol - solo UNA VEZ usando sessionStorage
   useEffect(() => {
-    if (!authLoading && user && !hasRedirected.current) {
-      hasRedirected.current = true;
-      navigate("/", { replace: true });
+    const hasRedirected = sessionStorage.getItem('hasRedirected');
+    
+    console.log('🔍 Auth useEffect triggered:', {
+      authLoading,
+      hasUser: !!user,
+      userRolesLength: userRoles.length,
+      userRoles: userRoles,
+      hasRedirected
+    });
+
+    // Si llegamos aquí con hasRedirected=true significa que algo falló
+    // Limpiar el flag y permitir reintento
+    if (hasRedirected && !authLoading && user && userRoles.length > 0) {
+      console.log('🔄 Usuario autenticado pero volvió a /auth, limpiando flag y reintentando...');
+      sessionStorage.removeItem('hasRedirected');
+      return; // Esperar al siguiente render sin el flag
     }
-  }, [authLoading, user, navigate]);
+
+    if (!authLoading && user && !hasRedirected) {
+      // Si no hay roles aún, esperar un poco
+      
+      if (userRoles.length === 0) {
+        setShowLoadingScreen(true);        // Después de 3 segundos, redirigir aunque no haya roles
+        const timeout = setTimeout(() => {
+          sessionStorage.setItem('hasRedirected', 'true');
+          setShowLoadingScreen(false);
+          navigate('/dashboard/produccion', { replace: true });
+        }, 3000);
+        
+        return () => {
+          clearTimeout(timeout);
+        };
+      }
+      
+      // Ya hay roles, redirigir inmediatamente
+      sessionStorage.setItem('hasRedirected', 'true');
+      setShowLoadingScreen(false);
+      
+      if (userRoles.some(r => r.role === 'admin_global')) {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (userRoles.some(r => r.role === 'supervisor')) {
+        navigate('/dashboard/produccion/supervisor', { replace: true });
+      } else {
+        navigate('/dashboard/produccion', { replace: true });
+      }
+    } else if (hasRedirected && (!user || userRoles.length === 0)) {
+      // Si hasRedirected está true pero no hay user/roles, limpiar
+      sessionStorage.removeItem('hasRedirected');
+    }
+  }, [authLoading, user, userRoles, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!loginEmail?.trim() || !loginPassword) {
+      console.log('⚠️ Email o password vacío');
       return;
     }
     
+    console.log('🔐 Iniciando login...');
     setLoading(true);
+    setShowLoadingScreen(true);
     
+    // Limpiar flag de redirect previo
+    sessionStorage.removeItem('hasRedirected');
+    
+    // PASO 1: Validar email + contraseña
     const { error } = await signIn(loginEmail.trim(), loginPassword);
     
-    if (!error) {
-      // Reset para permitir redirect en useEffect
-      hasRedirected.current = false;
+    if (error) {
+      console.log('❌ Error en login:', error);
+      setShowLoadingScreen(false);
+      setLoading(false);
+      return;
     }
+
+    // PASO 2: Verificar si el usuario tiene 2FA habilitado
+    console.log('✅ Credenciales válidas, verificando 2FA...');
     
-    setLoading(false);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const userId = session?.session?.user?.id;
+
+      if (!userId) {
+        console.log('❌ No se pudo obtener userId');
+        setShowLoadingScreen(false);
+        setLoading(false);
+        return;
+      }
+
+      // Consultar si el usuario tiene 2FA activo
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('two_factor_enabled')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.two_factor_enabled) {
+        // Usuario tiene 2FA: redirigir a pantalla de verificación TOTP
+        console.log('🔐 Usuario tiene 2FA activo, redirigiendo a verificación...');
+        
+        // Cerrar la sesión temporalmente hasta que complete 2FA
+        await supabase.auth.signOut();
+        
+        navigate('/auth/2fa', { 
+          state: { 
+            userId: userId,
+            email: loginEmail.trim() 
+          },
+          replace: true 
+        });
+      } else {
+        // Usuario NO tiene 2FA: continuar con login normal
+        console.log('✅ Login exitoso sin 2FA, preparando redirect...');
+        // El useEffect de arriba se encargará del redirect según rol
+      }
+    } catch (error) {
+      console.error('Error verificando 2FA:', error);
+      // Si falla la verificación, continuar con login normal
+      console.log('⚠️ Error verificando 2FA, continuando con login normal');
+    } finally {
+      setShowLoadingScreen(false);
+      setLoading(false);
+    }
   };
+
+  // Pantalla de carga
+  if (showLoadingScreen) {
+    console.log('📺 Mostrando pantalla de carga');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-success/10 via-background to-info/10">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="gradient-primary rounded-full p-3">
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Accediendo...</h3>
+                <p className="text-sm text-muted-foreground">
+                  Verificando permisos
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Si hay user autenticado y ya se redirigió, no mostrar form
+  // PERO: si estamos aquí significa que el redirect falló, así que no bloquear indefinidamente
+  const hasRedirected = sessionStorage.getItem('hasRedirected');
+  if (user && hasRedirected && !authLoading) {
+    // Mostrar loader mientras se limpia el flag y reintenta
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-success/10 via-background to-info/10">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="gradient-primary rounded-full p-3">
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Redirigiendo...</h3>
+                <p className="text-sm text-muted-foreground">
+                  Accediendo a tu dashboard
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Signup deshabilitado - los usuarios se crean desde Admin Panel
   // No se permite auto-registro público
@@ -83,7 +239,16 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Contraseña</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="login-password">Contraseña</Label>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/auth/forgot-password')}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
                   <Input
                     id="login-password"
                     type="password"

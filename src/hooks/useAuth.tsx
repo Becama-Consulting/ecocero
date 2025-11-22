@@ -63,7 +63,11 @@ export const useAuth = () => {
         .select("role")
         .eq("user_id", userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching user roles:", error);
+        setUserRoles([]);
+        return;
+      }
       
       setUserRoles(data || []);
     } catch (error) {
@@ -122,6 +126,9 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
+    // Limpiar sessionStorage al cerrar sesión
+    sessionStorage.removeItem('hasRedirected');
+    
     const { error } = await supabase.auth.signOut();
     
     if (error) {
@@ -151,9 +158,9 @@ export const useAuth = () => {
   const getDashboardByRole = useCallback(async () => {
     if (!user || userRoles.length === 0) return '/auth';
     
-    // Admin global ve selector de módulos
+    // Admin global va a admin dashboard
     if (userRoles.some(r => r.role === 'admin_global')) {
-      return '/';
+      return '/admin/dashboard';
     }
     
     // Para otros roles, obtener departamento del perfil
@@ -196,7 +203,7 @@ export const useAuth = () => {
       return '/dashboard/produccion';
     }
     
-    return '/';
+    return '/dashboard/produccion';
   }, [user, userRoles]);
 
   return {
